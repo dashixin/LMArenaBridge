@@ -84,10 +84,12 @@ class LMArenaManager:
         btn_frame_api = ttk.Frame(control_frame)
         btn_frame_api.grid(row=0, column=2, padx=5, pady=5, sticky=tk.E)
         
-        self.start_api_btn = ttk.Button(btn_frame_api, text="启动", command=self.start_api_server, width=10)
+        self.start_api_btn = ttk.Button(btn_frame_api, text="启动", command=self.start_api_server, width=8)
         self.start_api_btn.pack(side=tk.LEFT, padx=2)
-        self.stop_api_btn = ttk.Button(btn_frame_api, text="停止", command=self.stop_api_server, state=tk.DISABLED, width=10)
+        self.stop_api_btn = ttk.Button(btn_frame_api, text="停止", command=self.stop_api_server, state=tk.DISABLED, width=8)
         self.stop_api_btn.pack(side=tk.LEFT, padx=2)
+        self.kill_api_btn = ttk.Button(btn_frame_api, text="Kill", command=self.kill_api_server_by_port, width=5)
+        self.kill_api_btn.pack(side=tk.LEFT, padx=2)
 
         # --- 日志显示区域 ---
         log_container = ttk.Frame(paned_window)
@@ -407,6 +409,68 @@ class LMArenaManager:
             
         except Exception as e:
             self.log_message(f"停止API服务器失败: {e}", "ERROR")
+            
+    def kill_api_server_by_port(self):
+        """通过端口号强制终止API服务器进程"""
+        port = 5102
+        if not messagebox.askyesno("确认操作", f"您确定要强制终止占用端口 {port} 的所有进程吗？\n这可能导致数据丢失或服务异常。"):
+            return
+
+        self.log_message(f"正在尝试强制终止占用端口 {port} 的进程...", "WARN")
+        threading.Thread(target=self._kill_process_on_port, args=(port,), daemon=True).start()
+
+    def _kill_process_on_port(self, port):
+        """在后台线程中执行终止操作"""
+        try:
+            killed_pids = []
+            if sys.platform == "win32":
+                # Windows
+                find_cmd = f"netstat -ano | findstr LISTENING | findstr :{port}"
+                result = subprocess.run(find_cmd, capture_output=True, text=True, shell=True, encoding='utf-8', errors='ignore')
+                output = result.stdout.strip()
+                if output:
+                    for line in output.splitlines():
+                        parts = line.split()
+                        if len(parts) > 4:
+                            pid = parts[-1]
+                            self.log_message(f"找到监听端口 {port} 的进程 PID: {pid}")
+                            kill_cmd = f"taskkill /F /PID {pid}"
+                            kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, shell=True)
+                            if kill_result.returncode == 0:
+                                self.log_message(f"成功终止进程 PID: {pid}", "INFO")
+                                killed_pids.append(pid)
+                            else:
+                                self.log_message(f"终止进程 PID: {pid} 失败: {kill_result.stderr.strip()}", "ERROR")
+            else:
+                # Linux / macOS
+                find_cmd = f"lsof -t -i:{port} -sTCP:LISTEN"
+                result = subprocess.run(find_cmd, capture_output=True, text=True, shell=True)
+                pids = result.stdout.strip().split()
+                if pids:
+                    for pid in pids:
+                        self.log_message(f"找到监听端口 {port} 的进程 PID: {pid}")
+                        kill_cmd = f"kill -9 {pid}"
+                        kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, shell=True)
+                        if kill_result.returncode == 0:
+                            self.log_message(f"成功终止进程 PID: {pid}", "INFO")
+                            killed_pids.append(pid)
+                        else:
+                            self.log_message(f"终止进程 PID: {pid} 失败: {kill_result.stderr.strip()}", "ERROR")
+            
+            if killed_pids:
+                self.root.after(0, lambda: messagebox.showinfo("成功", f"已强制终止占用端口 {port} 的进程: {', '.join(killed_pids)}"))
+                # 如果被杀死的进程是管理器启动的，则更新UI状态
+                if self.api_server_process and str(self.api_server_process.pid) in killed_pids:
+                    self.api_server_process = None
+                    self.root.after(0, self.stop_api_server) # 调用stop来重置按钮状态
+            else:
+                self.log_message(f"未找到监听端口 {port} 的活动进程。")
+                self.root.after(0, lambda: messagebox.showinfo("提示", f"未找到监听端口 {port} 的活动进程。"))
+
+        except Exception as e:
+            error_msg = f"强制终止进程时出错: {e}"
+            self.log_message(error_msg, "ERROR")
+            self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
             
     def start_all_services(self):
         """启动所有服务"""

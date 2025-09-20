@@ -5,10 +5,10 @@
   // --- 会话设置 ---
   // 当前 LMArena 页面的会话 ID。
   // 通过运行 id_updater.py 可以自动更新。
-  "session_id": "5bba88f3-a752-4f34-9f4d-c61e6e0a84bf",
+  "session_id": "903048f9-2e88-4f57-9f4a-ad327f98cb8d",
   // 当前会话的最后一条消息 ID。
   // 通过运行 id_updater.py 可以自动更新。
-  "message_id": "44e47287-67af-461e-a0e2-a890345d3454",
+  "message_id": "a96390f8-a3c6-40f0-8542-9f8663dbeee4",
   // --- ID 更新器专用配置 ---
   // id_updater.py 上次使用的模式 ('direct_chat' 或 'battle')
   "id_updater_last_mode": "direct_chat",
@@ -58,5 +58,5 @@
   // API Key
   // 设置一个 API Key 来保护您的服务。
   // 如果设置了此值，所有到 /v1/chat/completions 的请求都必须在 Authorization 头部中包含正确的 Bearer Token。
-  "api_key": "1234566"
+  "api_key": "123456"
 }
