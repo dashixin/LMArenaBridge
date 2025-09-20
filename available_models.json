@@ -90,26 +90,6 @@
         "provider": "bfl"
     },
     {
-        "id": "22bbd5be-5f81-4a93-88ef-e6c32432370f",
-        "publicName": "seedream-4-fal",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true,
-                "image": {
-                    "multipleImages": true,
-                    "requiresUpload": false
-                }
-            },
-            "outputCapabilities": {
-                "image": {
-                    "aspectRatios": [
-                        "1:1"
-                    ]
-                }
-            }
-        }
-    },
-    {
         "id": "ee116d12-64d6-48a8-88e5-b2d06325cdd2",
         "publicName": "claude-opus-4-20250514",
         "capabilities": {
@@ -243,18 +223,6 @@
         "provider": "fireworks"
     },
     {
-        "id": "9217ac2d-91bc-4391-aa07-b8f9e2cf11f2",
-        "publicName": "menlo",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true
-            },
-            "outputCapabilities": {
-                "search": true
-            }
-        }
-    },
-    {
         "id": "49bd7403-c7fd-4d91-9829-90a91906ad6c",
         "publicName": "llama-4-maverick-03-26-experimental",
         "capabilities": {
@@ -326,6 +294,28 @@
         },
         "organization": "google",
         "provider": "google"
+    },
+    {
+        "id": "df1cd509-605b-43fe-978e-7546126cc5d2",
+        "publicName": "seedream-4-high-res",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true,
+                "image": true
+            },
+            "outputCapabilities": {
+                "web": false,
+                "code": false,
+                "text": false,
+                "image": {
+                    "aspectRatios": [
+                        "1:1"
+                    ]
+                },
+                "video": false,
+                "search": false
+            }
+        }
     },
     {
         "id": "42015285-534d-4e6b-9a9a-9061c2f73e1c",
@@ -862,6 +852,20 @@
         },
         "organization": "xai",
         "provider": "xaiPublic"
+    },
+    {
+        "id": "9217ac2d-91bc-4391-aa07-b8f9e2cf11f2",
+        "publicName": "grok-4-fast-search",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "search": true
+            }
+        },
+        "organization": "xai",
+        "provider": "xaiResearchSearch"
     },
     {
         "id": "b222be23-bd55-4b20-930b-a30cc84d3afd",
@@ -1411,28 +1415,6 @@
         "provider": "zai"
     },
     {
-        "id": "df1cd509-605b-43fe-978e-7546126cc5d2",
-        "publicName": "seedream-4",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true,
-                "image": {
-                    "multipleImages": true,
-                    "requiresUpload": false
-                }
-            },
-            "outputCapabilities": {
-                "image": {
-                    "aspectRatios": [
-                        "1:1"
-                    ]
-                }
-            }
-        },
-        "organization": "bytedance",
-        "provider": "bytedance"
-    },
-    {
         "id": "27035fb8-a25b-4ec9-8410-34be18328afd",
         "publicName": "mistral-medium-2508",
         "capabilities": {
@@ -1548,6 +1530,18 @@
         },
         "organization": "Ideogram",
         "provider": "fal"
+    },
+    {
+        "id": "fdad92e8-43c9-4d54-9454-d34c14b55ab6",
+        "publicName": "anonymous-915",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        }
     },
     {
         "id": "9bbbca46-b6c2-4919-83a8-87ef1c559c4e",
@@ -1954,6 +1948,20 @@
         }
     },
     {
+        "id": "71023e9b-7361-498a-b6db-f2d2a83883fd",
+        "publicName": "grok-4-fast",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        },
+        "organization": "xai",
+        "provider": "xaiResearch"
+    },
+    {
         "id": "463197ea-34f1-418e-b685-917015a004ab",
         "publicName": "phantom-0903-4",
         "capabilities": {
@@ -2036,26 +2044,6 @@
         },
         "organization": "meituan",
         "provider": "meituan"
-    },
-    {
-        "id": "32974d8d-333c-4d2e-abf3-f258c0ac1310",
-        "publicName": "seedream-4-high-res",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true,
-                "image": {
-                    "multipleImages": true,
-                    "requiresUpload": false
-                }
-            },
-            "outputCapabilities": {
-                "image": {
-                    "aspectRatios": [
-                        "1:1"
-                    ]
-                }
-            }
-        }
     },
     {
         "id": "3a91bb37-39fb-471c-8aa2-a89b98d280d0",

@@ -32,10 +32,10 @@
   "file_bed_enabled": false,
   // 文件床上传API的URL
   // 这是您 file_bed_server/main.py 服务的 /upload 端点地址。
-  // "file_bed_upload_url": "http://127.0.0.1:5180/upload",
+  //  "file_bed_upload_url": "http://127.0.0.1:5180/upload",
   // 文件床 API Key
   // 如果您在 file_bed_server/main.py 中设置了 API_KEY，请在此处填写。
-  "file_bed_api_key": "your_secret_api_key",
+  "file_bed_api_key": "123456",
   // --- 模型映射设置 ---
   // 开关：当模型映射不存在时，使用默认ID
   // 如果设置为 true，当请求的模型在 model_endpoint_map.json 中找不到时，
@@ -58,5 +58,5 @@
   // API Key
   // 设置一个 API Key 来保护您的服务。
   // 如果设置了此值，所有到 /v1/chat/completions 的请求都必须在 Authorization 头部中包含正确的 Bearer Token。
-  "api_key": "123456"
+  "api_key": "1234566"
 }

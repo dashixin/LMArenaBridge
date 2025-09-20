@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # 将上传目录定位到 main.py 文件的同级目录
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-API_KEY = "your_secret_api_key"  # 简单的认证密钥
+API_KEY = "123456"  # 简单的认证密钥
 CLEANUP_INTERVAL_MINUTES = 1 # 清理任务运行频率（分钟）
 FILE_MAX_AGE_MINUTES = 10 # 文件最大保留时间（分钟）
 

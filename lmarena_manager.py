@@ -28,7 +28,6 @@ class LMArenaManager:
         
         # 服务进程管理
         self.api_server_process = None
-        self.filebed_server_process = None
         self.is_updating_id = False # 添加一个锁来防止并发更新
         
         # 配置数据
@@ -57,61 +56,55 @@ class LMArenaManager:
         self.create_config_tab()
         self.create_model_tab()
         self.create_status_tab()
-        self.create_help_tab()
         
         # 创建状态栏
         self.create_status_bar(main_frame)
         
     def create_service_tab(self):
         """创建服务管理标签页"""
-        service_frame = ttk.Frame(self.notebook)
+        service_frame = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(service_frame, text="服务管理")
+
+        # 使用 PanedWindow 分割控制区和日志区
+        paned_window = ttk.PanedWindow(service_frame, orient=tk.VERTICAL)
+        paned_window.pack(fill=tk.BOTH, expand=True)
+
+        # --- 服务控制区域 ---
+        control_frame = ttk.LabelFrame(paned_window, text="服务状态与控制", padding=10)
+        paned_window.add(control_frame, weight=0) # weight=0, initial size is minimal
+
+        control_frame.grid_columnconfigure(1, weight=1) # Allow status label to expand
+
+        # API 服务器行
+        ttk.Label(control_frame, text="API 服务器:", font=("Arial", 10, "bold")).grid(row=0, column=0, padx=5, pady=10, sticky=tk.W)
         
-        # 服务控制区域
-        control_frame = ttk.LabelFrame(service_frame, text="服务控制", padding=10)
-        control_frame.pack(fill=tk.X, padx=5, pady=5)
+        self.api_service_status_label = ttk.Label(control_frame, text="○ 已停止", foreground="red")
+        self.api_service_status_label.grid(row=0, column=1, padx=5, pady=10, sticky=tk.W)
+
+        btn_frame_api = ttk.Frame(control_frame)
+        btn_frame_api.grid(row=0, column=2, padx=5, pady=5, sticky=tk.E)
         
-        # API服务器控制
-        api_frame = ttk.Frame(control_frame)
-        api_frame.pack(side=tk.LEFT, padx=10)
-        
-        ttk.Label(api_frame, text="API服务器", font=("Arial", 10, "bold")).pack()
-        self.start_api_btn = ttk.Button(api_frame, text="启动API服务器", command=self.start_api_server)
-        self.start_api_btn.pack(pady=2)
-        self.stop_api_btn = ttk.Button(api_frame, text="停止API服务器", command=self.stop_api_server, state=tk.DISABLED)
-        self.stop_api_btn.pack(pady=2)
-        
-        # 文件床服务器控制
-        filebed_frame = ttk.Frame(control_frame)
-        filebed_frame.pack(side=tk.LEFT, padx=10)
-        
-        ttk.Label(filebed_frame, text="文件床服务", font=("Arial", 10, "bold")).pack()
-        self.start_filebed_btn = ttk.Button(filebed_frame, text="启动文件床服务", command=self.start_filebed_server)
-        self.start_filebed_btn.pack(pady=2)
-        self.stop_filebed_btn = ttk.Button(filebed_frame, text="停止文件床服务", command=self.stop_filebed_server, state=tk.DISABLED)
-        self.stop_filebed_btn.pack(pady=2)
-        
-        # 快速操作
-        quick_frame = ttk.Frame(control_frame)
-        quick_frame.pack(side=tk.LEFT, padx=10)
-        
-        ttk.Label(quick_frame, text="快速操作", font=("Arial", 10, "bold")).pack()
-        ttk.Button(quick_frame, text="启动所有服务", command=self.start_all_services).pack(pady=2)
-        ttk.Button(quick_frame, text="停止所有服务", command=self.stop_all_services).pack(pady=2)
-        
-        # 日志显示区域
-        log_frame = ttk.LabelFrame(service_frame, text="服务日志", padding=5)
-        log_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
+        self.start_api_btn = ttk.Button(btn_frame_api, text="启动", command=self.start_api_server, width=10)
+        self.start_api_btn.pack(side=tk.LEFT, padx=2)
+        self.stop_api_btn = ttk.Button(btn_frame_api, text="停止", command=self.stop_api_server, state=tk.DISABLED, width=10)
+        self.stop_api_btn.pack(side=tk.LEFT, padx=2)
+
+        # --- 日志显示区域 ---
+        log_container = ttk.Frame(paned_window)
+        paned_window.add(log_container, weight=1)
+
+        log_frame = ttk.LabelFrame(log_container, text="服务日志", padding=5)
+        log_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 日志工具栏
+        log_toolbar = ttk.Frame(log_frame)
+        log_toolbar.pack(fill=tk.X, pady=(0, 5))
+        ttk.Button(log_toolbar, text="导出日志", command=self.export_log).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(log_toolbar, text="清空日志", command=self.clear_log).pack(side=tk.RIGHT)
+
+        # 日志文本框
         self.log_text = scrolledtext.ScrolledText(log_frame, height=15, wrap=tk.WORD)
         self.log_text.pack(fill=tk.BOTH, expand=True)
-        
-        # 日志操作按钮
-        log_btn_frame = ttk.Frame(log_frame)
-        log_btn_frame.pack(fill=tk.X, pady=5)
-        
-        ttk.Button(log_btn_frame, text="清空日志", command=self.clear_log).pack(side=tk.LEFT, padx=5)
-        ttk.Button(log_btn_frame, text="导出日志", command=self.export_log).pack(side=tk.LEFT, padx=5)
         
     def create_config_tab(self):
         """创建配置管理标签页"""
@@ -131,18 +124,6 @@ class LMArenaManager:
         self.api_key_entry = ttk.Entry(api_key_frame, textvariable=self.api_key_var, width=30)
         self.api_key_entry.pack(side=tk.LEFT, padx=5)
         ttk.Button(api_key_frame, text="生成随机密钥", command=self.generate_api_key).pack(side=tk.LEFT, padx=5)
-        
-        # 功能开关
-        switches_frame = ttk.Frame(basic_frame)
-        switches_frame.pack(fill=tk.X, pady=5)
-        
-        self.bypass_var = tk.BooleanVar()
-        self.tavern_var = tk.BooleanVar()
-        self.filebed_var = tk.BooleanVar()
-        
-        ttk.Checkbutton(switches_frame, text="启用绕过模式", variable=self.bypass_var).pack(side=tk.LEFT, padx=10)
-        ttk.Checkbutton(switches_frame, text="启用酒馆模式", variable=self.tavern_var).pack(side=tk.LEFT, padx=10)
-        ttk.Checkbutton(switches_frame, text="启用文件床", variable=self.filebed_var).pack(side=tk.LEFT, padx=10)
         
         # 会话管理区域
         session_frame = ttk.LabelFrame(config_frame, text="会话管理", padding=10)
@@ -237,9 +218,6 @@ class LMArenaManager:
         self.api_status_label = ttk.Label(connection_frame, text="API服务器: ○ 已停止")
         self.api_status_label.pack(anchor=tk.W, pady=2)
         
-        self.filebed_status_label = ttk.Label(connection_frame, text="文件床服务: ○ 已停止")
-        self.filebed_status_label.pack(anchor=tk.W, pady=2)
-        
         self.websocket_status_label = ttk.Label(connection_frame, text="WebSocket: ○ 未连接")
         self.websocket_status_label.pack(anchor=tk.W, pady=2)
         
@@ -267,42 +245,6 @@ class LMArenaManager:
         self.config_status_label = ttk.Label(info_frame, text="配置状态: 检查中...")
         self.config_status_label.pack(anchor=tk.W, pady=2)
         
-    def create_help_tab(self):
-        """创建帮助标签页"""
-        help_frame = ttk.Frame(self.notebook)
-        self.notebook.add(help_frame, text="帮助")
-        
-        # 快速开始区域
-        start_frame = ttk.LabelFrame(help_frame, text="快速开始", padding=10)
-        start_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        ttk.Button(start_frame, text="首次使用向导", command=self.show_setup_wizard).pack(side=tk.LEFT, padx=5)
-        ttk.Button(start_frame, text="常见问题解答", command=self.show_faq).pack(side=tk.LEFT, padx=5)
-        ttk.Button(start_frame, text="查看完整文档", command=self.open_documentation).pack(side=tk.LEFT, padx=5)
-        
-        # 关于区域
-        about_frame = ttk.LabelFrame(help_frame, text="关于", padding=10)
-        about_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        about_text = """LMArenaBridge 管理器 v1.0
-基于 LMArenaBridge v2.7.6
-
-这是一个集成管理工具，简化了LMArenaBridge项目的使用流程。
-通过图形界面，您可以轻松管理服务、配置和模型。
-
-开发者: 基于原项目扩展开发
-项目地址: https://github.com/Lianues/LMArenaBridge"""
-        
-        ttk.Label(about_frame, text=about_text, justify=tk.LEFT).pack(anchor=tk.W)
-        
-        # 操作按钮
-        action_frame = ttk.Frame(about_frame)
-        action_frame.pack(fill=tk.X, pady=10)
-        
-        ttk.Button(action_frame, text="检查更新", command=self.check_updates).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="访问GitHub", command=self.open_github).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="报告问题", command=self.report_issue).pack(side=tk.LEFT, padx=5)
-        
     def create_status_bar(self, parent):
         """创建状态栏"""
         self.status_bar = ttk.Frame(parent)
@@ -314,9 +256,6 @@ class LMArenaManager:
         # 服务状态指示器
         self.api_indicator = ttk.Label(self.status_bar, text="API服务器: ○已停止", foreground="red")
         self.api_indicator.pack(side=tk.RIGHT, padx=10)
-        
-        self.filebed_indicator = ttk.Label(self.status_bar, text="文件床: ○已停止", foreground="red")
-        self.filebed_indicator.pack(side=tk.RIGHT, padx=10)
         
     # ==================== 数据加载和保存 ====================
     
@@ -343,9 +282,6 @@ class LMArenaManager:
                 
             # 更新界面
             self.api_key_var.set(self.config_data.get('api_key', ''))
-            self.bypass_var.set(self.config_data.get('bypass_enabled', False))
-            self.tavern_var.set(self.config_data.get('tavern_mode_enabled', False))
-            self.filebed_var.set(self.config_data.get('file_bed_enabled', False))
             self.mode_var.set(self.config_data.get('id_updater_last_mode', 'direct_chat'))
             
             # 更新会话ID显示
@@ -378,9 +314,6 @@ class LMArenaManager:
         try:
             # 更新配置数据
             self.config_data['api_key'] = self.api_key_var.get()
-            self.config_data['bypass_enabled'] = self.bypass_var.get()
-            self.config_data['tavern_mode_enabled'] = self.tavern_var.get()
-            self.config_data['file_bed_enabled'] = self.filebed_var.get()
             self.config_data['id_updater_last_mode'] = self.mode_var.get()
             
             # 读取原文件保留注释
@@ -475,79 +408,13 @@ class LMArenaManager:
         except Exception as e:
             self.log_message(f"停止API服务器失败: {e}", "ERROR")
             
-    def start_filebed_server(self):
-        """启动文件床服务器"""
-        try:
-            if self.filebed_server_process and self.filebed_server_process.poll() is None:
-                messagebox.showwarning("警告", "文件床服务器已在运行中")
-                return
-                
-            self.log_message("正在启动文件床服务器...")
-            
-            # 设置环境变量，强制子进程使用UTF-8编码
-            env = os.environ.copy()
-            env["PYTHONUTF8"] = "1"
-            
-            self.filebed_server_process = subprocess.Popen(
-                [sys.executable, "file_bed_server/main.py"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                encoding='utf-8',
-                errors='replace',
-                bufsize=1,
-                env=env
-            )
-            
-            # 启动日志监控线程
-            threading.Thread(target=self.monitor_filebed_server_output, daemon=True).start()
-            
-            self.start_filebed_btn.config(state=tk.DISABLED)
-            self.stop_filebed_btn.config(state=tk.NORMAL)
-            
-            self.log_message("文件床服务器启动命令已发送")
-            
-        except Exception as e:
-            self.log_message(f"启动文件床服务器失败: {e}", "ERROR")
-            messagebox.showerror("错误", f"启动文件床服务器失败: {e}")
-            
-    def stop_filebed_server(self):
-        """停止文件床服务器"""
-        try:
-            if self.filebed_server_process and self.filebed_server_process.poll() is None:
-                pid = self.filebed_server_process.pid
-                if sys.platform == "win32":
-                    # 在Windows上，使用taskkill强制终止进程及其所有子进程
-                    subprocess.run(['taskkill', '/F', '/T', '/PID', str(pid)], check=True, capture_output=True)
-                else:
-                    # 在其他系统上，使用terminate/kill
-                    self.filebed_server_process.terminate()
-                    try:
-                        self.filebed_server_process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        self.filebed_server_process.kill()
-
-                self.filebed_server_process = None
-                
-            self.start_filebed_btn.config(state=tk.NORMAL)
-            self.stop_filebed_btn.config(state=tk.DISABLED)
-            
-            self.log_message("文件床服务器已停止")
-            
-        except Exception as e:
-            self.log_message(f"停止文件床服务器失败: {e}", "ERROR")
-            
     def start_all_services(self):
         """启动所有服务"""
         self.start_api_server()
-        if self.filebed_var.get():  # 只有启用文件床时才启动
-            time.sleep(1)  # 稍微延迟避免端口冲突
-            self.start_filebed_server()
             
     def stop_all_services(self):
         """停止所有服务"""
         self.stop_api_server()
-        self.stop_filebed_server()
         
     # ==================== 日志管理 ====================
     
@@ -595,20 +462,6 @@ class LMArenaManager:
         except Exception as e:
             self.root.after(0, lambda: self.log_message(f"[API] 监控输出时出错: {e}", "ERROR"))
             
-    def monitor_filebed_server_output(self):
-        """监控文件床服务器输出"""
-        if not self.filebed_server_process:
-            return
-            
-        try:
-            for line in iter(self.filebed_server_process.stdout.readline, ''):
-                if line:
-                    self.root.after(0, lambda l=line.strip(): self.log_message(f"[文件床] {l}"))
-                if self.filebed_server_process.poll() is not None:
-                    break
-        except Exception as e:
-            self.root.after(0, lambda: self.log_message(f"[文件床] 监控输出时出错: {e}", "ERROR"))
-            
     # ==================== 配置管理 ====================
     
     def generate_api_key(self):
@@ -621,9 +474,6 @@ class LMArenaManager:
         """重置配置为默认值"""
         if messagebox.askyesno("确认", "确定要重置所有配置为默认值吗？"):
             self.api_key_var.set("")
-            self.bypass_var.set(True)
-            self.tavern_var.set(False)
-            self.filebed_var.set(False)
             self.mode_var.set("direct_chat")
             self.log_message("配置已重置为默认值")
             
@@ -830,18 +680,11 @@ class LMArenaManager:
         if api_running:
             self.api_status_label.config(text="API服务器: ● 运行中 (端口5102)", foreground="green")
             self.api_indicator.config(text="API服务器: ●运行中", foreground="green")
+            self.api_service_status_label.config(text="● 运行中", foreground="green")
         else:
             self.api_status_label.config(text="API服务器: ○ 已停止", foreground="red")
             self.api_indicator.config(text="API服务器: ○已停止", foreground="red")
-            
-        # 检查文件床服务器状态
-        filebed_running = self.filebed_server_process and self.filebed_server_process.poll() is None
-        if filebed_running:
-            self.filebed_status_label.config(text="文件床服务: ● 运行中", foreground="green")
-            self.filebed_indicator.config(text="文件床: ●运行中", foreground="green")
-        else:
-            self.filebed_status_label.config(text="文件床服务: ○ 已停止", foreground="red")
-            self.filebed_indicator.config(text="文件床: ○已停止", foreground="red")
+            self.api_service_status_label.config(text="○ 已停止", foreground="red")
             
         # 检查WebSocket连接状态
         self.check_websocket_status()
@@ -961,52 +804,6 @@ class LMArenaManager:
         else:
             messagebox.showinfo("诊断结果", "未发现明显问题，系统状态良好！")
             self.log_message("系统诊断通过")
-            
-    # ==================== 帮助功能 ====================
-    
-    def show_setup_wizard(self):
-        """显示首次使用向导"""
-        wizard = SetupWizard(self.root, self)
-        
-    def show_faq(self):
-        """显示常见问题解答"""
-        faq_text = """常见问题解答
-
-Q: 如何首次配置系统？
-A: 1. 启动API服务器
-   2. 在浏览器中打开LMArena页面并安装油猴脚本
-   3. 运行会话ID更新流程
-   4. 配置需要使用的模型
-
-Q: 为什么API服务器启动失败？
-A: 检查端口5102是否被占用，确保Python依赖已正确安装
-
-Q: 如何更新模型列表？
-A: 在模型管理页面点击"更新模型列表"，确保浏览器已打开LMArena页面
-
-Q: WebSocket连接失败怎么办？
-A: 确保油猴脚本已安装并激活，LMArena页面已打开
-
-Q: 如何配置文件床服务？
-A: 在配置管理中启用文件床，然后启动文件床服务器"""
-        
-        messagebox.showinfo("常见问题解答", faq_text)
-        
-    def open_documentation(self):
-        """打开完整文档"""
-        webbrowser.open("https://github.com/Lianues/LMArenaBridge/blob/main/README.md")
-        
-    def check_updates(self):
-        """检查更新"""
-        messagebox.showinfo("检查更新", "更新检查功能将在后续版本中实现")
-        
-    def open_github(self):
-        """访问GitHub"""
-        webbrowser.open("https://github.com/Lianues/LMArenaBridge")
-        
-    def report_issue(self):
-        """报告问题"""
-        webbrowser.open("https://github.com/Lianues/LMArenaBridge/issues")
         
     def run(self):
         """运行应用程序"""
@@ -1076,216 +873,6 @@ class ModelEditDialog:
         
     def cancel_clicked(self):
         """取消按钮点击"""
-        self.dialog.destroy()
-
-
-class SetupWizard:
-    """首次使用向导"""
-    def __init__(self, parent, manager):
-        self.manager = manager
-        
-        self.dialog = tk.Toplevel(parent)
-        self.dialog.title("首次使用向导")
-        self.dialog.geometry("600x400")
-        self.dialog.resizable(False, False)
-        self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
-        # 居中显示
-        self.dialog.geometry("+%d+%d" % (parent.winfo_rootx() + 100, parent.winfo_rooty() + 100))
-        
-        self.current_step = 0
-        self.create_widgets()
-        self.show_step()
-        
-    def create_widgets(self):
-        """创建向导组件"""
-        main_frame = ttk.Frame(self.dialog, padding=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 标题
-        self.title_label = ttk.Label(main_frame, text="", font=("Arial", 14, "bold"))
-        self.title_label.pack(pady=10)
-        
-        # 内容区域
-        self.content_frame = ttk.Frame(main_frame)
-        self.content_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        # 按钮区域
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(fill=tk.X, pady=10)
-        
-        self.prev_btn = ttk.Button(btn_frame, text="上一步", command=self.prev_step)
-        self.prev_btn.pack(side=tk.LEFT)
-        
-        self.next_btn = ttk.Button(btn_frame, text="下一步", command=self.next_step)
-        self.next_btn.pack(side=tk.RIGHT)
-        
-        self.finish_btn = ttk.Button(btn_frame, text="完成", command=self.finish)
-        self.finish_btn.pack(side=tk.RIGHT, padx=5)
-        
-    def show_step(self):
-        """显示当前步骤"""
-        # 清空内容区域
-        for widget in self.content_frame.winfo_children():
-            widget.destroy()
-            
-        steps = [
-            ("欢迎使用LMArenaBridge管理器", self.step_welcome),
-            ("检查系统环境", self.step_check_env),
-            ("启动API服务器", self.step_start_api),
-            ("配置浏览器脚本", self.step_browser_setup),
-            ("更新会话ID", self.step_session_id),
-            ("配置完成", self.step_complete)
-        ]
-        
-        if 0 <= self.current_step < len(steps):
-            title, step_func = steps[self.current_step]
-            self.title_label.config(text=f"步骤 {self.current_step + 1}/{len(steps)}: {title}")
-            step_func()
-            
-        # 更新按钮状态
-        self.prev_btn.config(state=tk.NORMAL if self.current_step > 0 else tk.DISABLED)
-        self.next_btn.config(state=tk.NORMAL if self.current_step < len(steps) - 1 else tk.DISABLED)
-        self.finish_btn.config(state=tk.NORMAL if self.current_step == len(steps) - 1 else tk.DISABLED)
-        
-    def step_welcome(self):
-        """欢迎步骤"""
-        text = """欢迎使用LMArenaBridge管理器！
-
-这个向导将帮助您完成首次配置，包括：
-• 检查系统环境和依赖
-• 启动必要的服务
-• 配置浏览器脚本
-• 设置会话ID
-• 配置模型列表
-
-整个过程大约需要5-10分钟。
-
-点击"下一步"开始配置。"""
-        
-        ttk.Label(self.content_frame, text=text, justify=tk.LEFT).pack(anchor=tk.W)
-        
-    def step_check_env(self):
-        """检查环境步骤"""
-        ttk.Label(self.content_frame, text="正在检查系统环境...", font=("Arial", 12)).pack(anchor=tk.W, pady=10)
-        
-        # 检查Python版本
-        python_version = sys.version.split()[0]
-        ttk.Label(self.content_frame, text=f"✓ Python版本: {python_version}").pack(anchor=tk.W, pady=2)
-        
-        # 检查依赖
-        try:
-            import fastapi, uvicorn, requests, packaging
-            ttk.Label(self.content_frame, text="✓ 所有依赖已安装", foreground="green").pack(anchor=tk.W, pady=2)
-        except ImportError as e:
-            ttk.Label(self.content_frame, text=f"✗ 缺少依赖: {e}", foreground="red").pack(anchor=tk.W, pady=2)
-            
-        # 检查配置文件
-        if os.path.exists('config.jsonc'):
-            ttk.Label(self.content_frame, text="✓ config.jsonc 文件存在", foreground="green").pack(anchor=tk.W, pady=2)
-        else:
-            ttk.Label(self.content_frame, text="✗ config.jsonc 文件不存在", foreground="red").pack(anchor=tk.W, pady=2)
-            
-        if os.path.exists('models.json'):
-            ttk.Label(self.content_frame, text="✓ models.json 文件存在", foreground="green").pack(anchor=tk.W, pady=2)
-        else:
-            ttk.Label(self.content_frame, text="✗ models.json 文件不存在", foreground="red").pack(anchor=tk.W, pady=2)
-            
-    def step_start_api(self):
-        """启动API服务器步骤"""
-        ttk.Label(self.content_frame, text="启动API服务器", font=("Arial", 12)).pack(anchor=tk.W, pady=10)
-        
-        if self.manager.api_server_process and self.manager.api_server_process.poll() is None:
-            ttk.Label(self.content_frame, text="✓ API服务器已在运行", foreground="green").pack(anchor=tk.W, pady=5)
-        else:
-            ttk.Label(self.content_frame, text="API服务器未运行，点击下面的按钮启动：").pack(anchor=tk.W, pady=5)
-            ttk.Button(self.content_frame, text="启动API服务器", command=self.manager.start_api_server).pack(anchor=tk.W, pady=5)
-            
-    def step_browser_setup(self):
-        """浏览器脚本配置步骤"""
-        text = """配置浏览器脚本
-
-请按照以下步骤配置：
-
-1. 安装Tampermonkey扩展
-   - Chrome: 访问Chrome网上应用店搜索"Tampermonkey"
-   - Firefox: 访问Firefox附加组件搜索"Tampermonkey"
-
-2. 安装LMArenaBridge脚本
-   - 打开Tampermonkey管理面板
-   - 点击"添加新脚本"
-   - 复制TampermonkeyScript/LMArenaApiBridge.js的内容
-   - 粘贴到编辑器中并保存
-
-3. 打开LMArena页面
-   - 访问 https://lmarena.ai
-   - 确保页面标题显示"✅"表示脚本已连接"""
-        
-        ttk.Label(self.content_frame, text=text, justify=tk.LEFT).pack(anchor=tk.W)
-        
-    def step_session_id(self):
-        """会话ID配置步骤"""
-        text = """更新会话ID
-
-这是最重要的配置步骤：
-
-1. 确保LMArena页面已打开且脚本已连接
-2. 选择模式（DirectChat或Battle）
-3. 点击"更新会话ID"按钮
-4. 在浏览器中点击任意模型回答的"Retry"按钮
-5. 系统将自动捕获并更新会话ID
-
-当前配置："""
-        
-        ttk.Label(self.content_frame, text=text, justify=tk.LEFT).pack(anchor=tk.W, pady=10)
-        
-        # 显示当前会话信息
-        session_id = self.manager.config_data.get('session_id', '未设置')
-        message_id = self.manager.config_data.get('message_id', '未设置')
-        
-        info_frame = ttk.Frame(self.content_frame)
-        info_frame.pack(fill=tk.X, pady=10)
-        
-        ttk.Label(info_frame, text=f"会话ID: {session_id[:8]}..." if len(session_id) > 8 else f"会话ID: {session_id}").pack(anchor=tk.W)
-        ttk.Label(info_frame, text=f"消息ID: {message_id[:8]}..." if len(message_id) > 8 else f"消息ID: {message_id}").pack(anchor=tk.W)
-        
-        # 更新按钮
-        ttk.Button(info_frame, text="更新会话ID", command=self.manager.update_session_id).pack(anchor=tk.W, pady=5)
-        
-    def step_complete(self):
-        """配置完成步骤"""
-        text = """配置完成！
-
-恭喜您已完成LMArenaBridge管理器的基本配置。
-
-现在您可以：
-• 通过任何OpenAI兼容的客户端使用LMArena模型
-• 在模型管理页面添加更多模型
-• 根据需要调整配置选项
-
-API地址: http://127.0.0.1:5102/v1
-API密钥: 请在配置管理页面查看
-
-感谢使用LMArenaBridge管理器！"""
-        
-        ttk.Label(self.content_frame, text=text, justify=tk.LEFT).pack(anchor=tk.W)
-        
-    def prev_step(self):
-        """上一步"""
-        if self.current_step > 0:
-            self.current_step -= 1
-            self.show_step()
-            
-    def next_step(self):
-        """下一步"""
-        steps_count = 6  # 总步骤数
-        if self.current_step < steps_count - 1:
-            self.current_step += 1
-            self.show_step()
-            
-    def finish(self):
-        """完成向导"""
         self.dialog.destroy()
 
 
