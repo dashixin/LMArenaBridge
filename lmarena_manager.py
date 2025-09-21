@@ -29,6 +29,7 @@ class LMArenaManager:
         # 服务进程管理
         self.api_server_process = None
         self.is_updating_id = False # 添加一个锁来防止并发更新
+        self.id_updater_killed_intentionally = False # 用于标记ID更新是否被用户手动终止
         
         # 配置数据
         self.config_data = {}
@@ -153,6 +154,7 @@ class LMArenaManager:
         mode_combo = ttk.Combobox(mode_frame, textvariable=self.mode_var, values=["direct_chat", "battle"], state="readonly", width=15)
         mode_combo.pack(side=tk.LEFT, padx=5)
         ttk.Button(mode_frame, text="更新会话ID", command=self.update_session_id).pack(side=tk.LEFT, padx=10)
+        ttk.Button(mode_frame, text="结束会话更新", command=self.kill_session_updater_by_port).pack(side=tk.LEFT, padx=5)
         
         # 配置操作按钮
         config_btn_frame = ttk.Frame(config_frame)
@@ -472,6 +474,63 @@ class LMArenaManager:
             self.log_message(error_msg, "ERROR")
             self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
             
+    def kill_session_updater_by_port(self):
+        """通过端口号强制终止会话更新进程"""
+        port = 5103
+        # 标志用户主动终止
+        self.id_updater_killed_intentionally = True
+        self.log_message(f"正在尝试强制终止占用端口 {port} 的进程...", "WARN")
+        threading.Thread(target=self._kill_session_updater_process, args=(port,), daemon=True).start()
+
+    def _kill_session_updater_process(self, port):
+        """在后台线程中执行终止会话更新进程的操作"""
+        try:
+            killed_pids = []
+            if sys.platform == "win32":
+                # Windows
+                find_cmd = f"netstat -ano | findstr LISTENING | findstr :{port}"
+                result = subprocess.run(find_cmd, capture_output=True, text=True, shell=True, encoding='utf-8', errors='ignore')
+                output = result.stdout.strip()
+                if output:
+                    for line in output.splitlines():
+                        parts = line.split()
+                        if len(parts) > 4:
+                            pid = parts[-1]
+                            self.log_message(f"找到监听端口 {port} 的进程 PID: {pid}")
+                            kill_cmd = f"taskkill /F /PID {pid}"
+                            kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, shell=True)
+                            if kill_result.returncode == 0:
+                                self.log_message(f"成功终止进程 PID: {pid}", "INFO")
+                                killed_pids.append(pid)
+                            else:
+                                self.log_message(f"终止进程 PID: {pid} 失败: {kill_result.stderr.strip()}", "ERROR")
+            else:
+                # Linux / macOS
+                find_cmd = f"lsof -t -i:{port} -sTCP:LISTEN"
+                result = subprocess.run(find_cmd, capture_output=True, text=True, shell=True)
+                pids = result.stdout.strip().split()
+                if pids:
+                    for pid in pids:
+                        self.log_message(f"找到监听端口 {port} 的进程 PID: {pid}")
+                        kill_cmd = f"kill -9 {pid}"
+                        kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, shell=True)
+                        if kill_result.returncode == 0:
+                            self.log_message(f"成功终止进程 PID: {pid}", "INFO")
+                            killed_pids.append(pid)
+                        else:
+                            self.log_message(f"终止进程 PID: {pid} 失败: {kill_result.stderr.strip()}", "ERROR")
+            
+            if killed_pids:
+                self.root.after(0, lambda: messagebox.showinfo("成功", f"已强制终止占用端口 {port} 的进程: {', '.join(killed_pids)}"))
+            else:
+                self.log_message(f"未找到监听端口 {port} 的活动进程。")
+                self.root.after(0, lambda: messagebox.showinfo("提示", f"未找到监听端口 {port} 的活动进程。"))
+
+        except Exception as e:
+            error_msg = f"强制终止进程时出错: {e}"
+            self.log_message(error_msg, "ERROR")
+            self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
+            
     def start_all_services(self):
         """启动所有服务"""
         self.start_api_server()
@@ -564,6 +623,9 @@ class LMArenaManager:
     def _run_id_updater_process(self, mode):
         """在单独的线程中运行 id_updater.py 进程"""
         try:
+            # 重置标志
+            self.id_updater_killed_intentionally = False
+            
             self.log_message(f"正在以 {mode} 模式启动会话ID更新...")
             
             # 弹出提示框，指导用户操作
@@ -624,12 +686,17 @@ class LMArenaManager:
                 # 在主线程中更新UI
                 self.root.after(0, self.on_id_update_success)
             else:
-                self.log_message(f"会话ID更新失败，id_updater.py 退出代码: {process.returncode}", "ERROR")
-                self.root.after(0, lambda: messagebox.showerror("错误", "会话ID更新失败，请查看日志获取详细信息。"))
+                if self.id_updater_killed_intentionally:
+                    self.log_message("会话ID更新已被用户主动终止。", "INFO")
+                    # 不显示错误对话框，因为这是用户主动操作
+                else:
+                    self.log_message(f"会话ID更新失败，id_updater.py 退出代码: {process.returncode}", "ERROR")
+                    self.root.after(0, lambda: messagebox.showerror("错误", "会话ID更新失败，请查看日志获取详细信息。"))
 
         except Exception as e:
-            self.log_message(f"执行 id_updater.py 时出错: {e}", "ERROR")
-            self.root.after(0, lambda: messagebox.showerror("错误", f"执行 id_updater.py 时出错: {e}"))
+            if not self.id_updater_killed_intentionally:
+                self.log_message(f"执行 id_updater.py 时出错: {e}", "ERROR")
+                self.root.after(0, lambda: messagebox.showerror("错误", f"执行 id_updater.py 时出错: {e}"))
         finally:
             # 确保在线程结束时释放锁
             self.is_updating_id = False
