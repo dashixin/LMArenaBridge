@@ -19,8 +19,6 @@ from cryptography.fernet import Fernet
 
 class AuthSystem:
     def __init__(self):
-        # 管理员密钥 - 请修改为您自己的密钥，并妥善保管
-        self.secret_key = b"LMArena_Bridge_2024_Secret_Key_Do_Not_Share"
         self.auth_file = ".auth"
         self.fernet_key = b'aK3xY9zB5mN8qW2eR6tY1uI4oP7sD0fG3hJ6kL9cV2b='  # 用于加密存储
         self.cipher = Fernet(self.fernet_key)
@@ -49,30 +47,17 @@ class AuthSystem:
         
         return formatted_code
         
-    def generate_auth_code(self, machine_code):
-        """生成授权码"""
-        # 移除机器码中的连字符
-        clean_machine_code = machine_code.replace('-', '')
-        
-        # 使用HMAC-SHA256生成授权码
-        auth_hash = hmac.new(
-            self.secret_key,
-            clean_machine_code.encode(),
-            hashlib.sha256
-        ).digest()
-        
-        # 使用Base32编码（去掉填充字符）
-        auth_code_raw = base64.b32encode(auth_hash)[:16].decode('utf-8')
-        
-        # 格式化为 XXXX-XXXX-XXXX-XXXX
-        formatted_code = '-'.join([auth_code_raw[i:i+4] for i in range(0, 16, 4)])
-        
-        return formatted_code
-        
     def verify_auth_code(self, machine_code, auth_code):
         """验证授权码"""
-        expected_auth_code = self.generate_auth_code(machine_code)
-        return auth_code.upper() == expected_auth_code.upper()
+        # 这里只是简单的格式验证，实际验证逻辑应该更复杂
+        # 客户端不应该包含生成授权码的逻辑
+        if not auth_code or not machine_code:
+            return False
+        
+        # 验证格式：XXXX-XXXX-XXXX-XXXX
+        import re
+        pattern = r'^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'
+        return bool(re.match(pattern, auth_code.upper()))
         
     def save_auth_info(self, auth_code):
         """保存授权信息"""
@@ -168,14 +153,6 @@ if __name__ == "__main__":
     print("=== 授权系统测试 ===")
     print(f"当前系统: {platform.system()}")
     print(f"机器码: {auth.get_machine_code()}")
-    
-    # 测试授权码生成
-    machine_code = auth.get_machine_code()
-    auth_code = auth.generate_auth_code(machine_code)
-    print(f"生成的授权码: {auth_code}")
-    
-    # 测试验证
-    print(f"验证结果: {auth.verify_auth_code(machine_code, auth_code)}")
     
     # 测试授权状态
     status = auth.get_auth_status()

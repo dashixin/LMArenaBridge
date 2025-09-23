@@ -127,7 +127,13 @@ class AuthDialog:
             return
             
         # 验证授权码
-        if self.auth_system.verify_auth_code(self.machine_code, auth_code):
+        # Import AuthKeyGen for generating auth code
+        from auth_keygen import AuthKeyGen
+        
+        # Create an instance with the secret key
+        keygen = AuthKeyGen(b"LMArena_Bridge_2024_Secret_Key_Do_Not_Share")
+        expected_auth_code = keygen.generate_auth_code(self.machine_code)
+        if auth_code.upper() == expected_auth_code.upper():
             # 保存授权信息
             self.auth_system.save_auth_info(auth_code)
             self.authorized = True
