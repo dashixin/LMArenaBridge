@@ -296,28 +296,6 @@
         "provider": "google"
     },
     {
-        "id": "df1cd509-605b-43fe-978e-7546126cc5d2",
-        "publicName": "seedream-4-high-res",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true,
-                "image": true
-            },
-            "outputCapabilities": {
-                "web": false,
-                "code": false,
-                "text": false,
-                "image": {
-                    "aspectRatios": [
-                        "1:1"
-                    ]
-                },
-                "video": false,
-                "search": false
-            }
-        }
-    },
-    {
         "id": "42015285-534d-4e6b-9a9a-9061c2f73e1c",
         "publicName": "x1-1-preview-0915",
         "capabilities": {
@@ -1030,18 +1008,6 @@
         "provider": "moonshot"
     },
     {
-        "id": "68b6f90d-9dd5-4995-97d0-7ea13c0c82ba",
-        "publicName": "Bailing-Lite-250220",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true
-            },
-            "outputCapabilities": {
-                "text": true
-            }
-        }
-    },
-    {
         "id": "ec3beb4b-7229-4232-bab9-670ee52dd711",
         "publicName": "gpt-oss-20b",
         "capabilities": {
@@ -1488,20 +1454,6 @@
         }
     },
     {
-        "id": "30dfdea7-b4bc-4dab-8515-5d93917c7f4f",
-        "publicName": "deepseek-v3.1",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true
-            },
-            "outputCapabilities": {
-                "text": true
-            }
-        },
-        "organization": "deepseek",
-        "provider": "deepseek"
-    },
-    {
         "id": "f1a5a6ab-e1b1-4247-88ac-49395291c1e3",
         "publicName": "not-a-new-model",
         "capabilities": {
@@ -1634,20 +1586,6 @@
         },
         "organization": "openai",
         "provider": "openai"
-    },
-    {
-        "id": "cff3fc67-4207-4dff-967f-f4de61115836",
-        "publicName": "deepseek-v3.1-thinking",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true
-            },
-            "outputCapabilities": {
-                "text": true
-            }
-        },
-        "organization": "deepseek",
-        "provider": "deepseek"
     },
     {
         "id": "c3d0e5c8-f4b3-417a-8cb8-2ccf757d3869",
@@ -1831,6 +1769,30 @@
         "provider": "openaiResponses"
     },
     {
+        "id": "df1cd509-605b-43fe-978e-7546126cc5d2",
+        "publicName": "seedream-4-2k",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true,
+                "image": true
+            },
+            "outputCapabilities": {
+                "web": false,
+                "code": false,
+                "text": false,
+                "image": {
+                    "aspectRatios": [
+                        "1:1"
+                    ]
+                },
+                "video": false,
+                "search": false
+            }
+        },
+        "organization": "bytedance",
+        "provider": "bytedance"
+    },
+    {
         "id": "19ad5f04-38c6-48ae-b826-f7d5bbfd79f7",
         "publicName": "gpt-5-high-new-system-prompt",
         "capabilities": {
@@ -1899,6 +1861,58 @@
         },
         "organization": "runway",
         "provider": "replicate"
+    },
+    {
+        "id": "11ad4114-c868-4fed-b6e7-d535dc9c62f8",
+        "publicName": "Ring-flash-2.0",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        }
+    },
+    {
+        "id": "71f96ca9-4cf8-4be7-bac2-2231613930a6",
+        "publicName": "Ling-flash-2.0",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        }
+    },
+    {
+        "id": "d2faf22e-4c1f-40b1-b1ea-35230b39be0b",
+        "publicName": "deepseek-v3.1-terminus",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        },
+        "organization": "deepseek",
+        "provider": "deepseek"
+    },
+    {
+        "id": "9433a14c-b284-411f-86a3-698174c85514",
+        "publicName": "deepseek-v3.1-terminus-thinking",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        },
+        "organization": "deepseek",
+        "provider": "deepseek"
     },
     {
         "id": "f4809219-14a8-47fe-9705-8685085513e7",

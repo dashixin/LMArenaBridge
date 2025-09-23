@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-LMArenaBridge 集成管理器
+LMArenaBridge 集成管理器 - 带授权版本
 一个简单易用的GUI应用程序，集成LMArenaBridge项目的所有核心功能
+包含一机一码授权系统
 """
 
 import tkinter as tk
@@ -18,11 +19,165 @@ from datetime import datetime
 import webbrowser
 import secrets
 import string
+from auth_system import AuthSystem
+
+
+class AuthDialog:
+    """授权对话框"""
+    def __init__(self, parent, auth_system):
+        self.auth_system = auth_system
+        self.authorized = False
+        self.parent = parent
+        
+        # 创建对话框
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("LMArenaBridge 授权验证")
+        self.dialog.geometry("500x400")
+        self.dialog.resizable(False, False)
+        
+        # 居中显示
+        self.dialog.update_idletasks()
+        x = (self.dialog.winfo_screenwidth() // 2) - (500 // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (400 // 2)
+        self.dialog.geometry(f"500x400+{x}+{y}")
+        
+        # 禁止关闭窗口
+        self.dialog.protocol("WM_DELETE_WINDOW", self.on_close)
+        
+        self.create_widgets()
+        
+        # 确保对话框显示在最前面
+        self.dialog.lift()
+        self.dialog.focus_force()
+        
+    def create_widgets(self):
+        """创建授权界面组件"""
+        # 标题
+        title_frame = ttk.Frame(self.dialog)
+        title_frame.pack(fill=tk.X, padx=20, pady=(20, 10))
+        
+        ttk.Label(title_frame, text="LMArenaBridge 授权验证", 
+                 font=("Arial", 16, "bold")).pack()
+        
+        # 说明文本
+        info_frame = ttk.Frame(self.dialog)
+        info_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        info_text = ("本软件需要授权才能使用。\n"
+                    "请将下方的机器码发送给管理员获取授权码。")
+        ttk.Label(info_frame, text=info_text, justify=tk.LEFT).pack()
+        
+        # 机器码显示
+        machine_frame = ttk.LabelFrame(self.dialog, text="您的机器码", padding=10)
+        machine_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        # 获取机器码
+        self.machine_code = self.auth_system.get_machine_code()
+        
+        # 机器码文本框（只读）
+        self.machine_code_text = tk.Text(machine_frame, height=2, width=40)
+        self.machine_code_text.pack(side=tk.LEFT, padx=(0, 10))
+        self.machine_code_text.insert(1.0, self.machine_code)
+        self.machine_code_text.config(state=tk.DISABLED)
+        
+        # 复制按钮
+        ttk.Button(machine_frame, text="复制机器码", 
+                  command=self.copy_machine_code).pack(side=tk.LEFT)
+        
+        # 授权码输入
+        auth_frame = ttk.LabelFrame(self.dialog, text="输入授权码", padding=10)
+        auth_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        ttk.Label(auth_frame, text="授权码:").pack(anchor=tk.W)
+        
+        self.auth_code_var = tk.StringVar()
+        self.auth_code_entry = ttk.Entry(auth_frame, textvariable=self.auth_code_var, 
+                                       width=40, font=("Consolas", 10))
+        self.auth_code_entry.pack(fill=tk.X, pady=5)
+        self.auth_code_entry.bind('<Return>', lambda e: self.verify_auth())
+        
+        # 按钮框架
+        button_frame = ttk.Frame(self.dialog)
+        button_frame.pack(fill=tk.X, padx=20, pady=20)
+        
+        ttk.Button(button_frame, text="验证授权码", 
+                  command=self.verify_auth).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="退出程序", 
+                  command=self.exit_program).pack(side=tk.LEFT, padx=5)
+        
+        # 状态标签
+        self.status_label = ttk.Label(self.dialog, text="", foreground="red")
+        self.status_label.pack(pady=10)
+        
+        # 聚焦到授权码输入框
+        self.auth_code_entry.focus()
+        
+    def copy_machine_code(self):
+        """复制机器码到剪贴板"""
+        self.dialog.clipboard_clear()
+        self.dialog.clipboard_append(self.machine_code)
+        self.status_label.config(text="机器码已复制到剪贴板", foreground="green")
+        
+    def verify_auth(self):
+        """验证授权码"""
+        auth_code = self.auth_code_var.get().strip()
+        
+        if not auth_code:
+            self.status_label.config(text="请输入授权码", foreground="red")
+            return
+            
+        # 验证授权码
+        if self.auth_system.verify_auth_code(self.machine_code, auth_code):
+            # 保存授权信息
+            self.auth_system.save_auth_info(auth_code)
+            self.authorized = True
+            self.status_label.config(text="授权验证成功！", foreground="green")
+            messagebox.showinfo("成功", "授权验证成功！\n程序将正常启动。")
+            self.dialog.destroy()
+        else:
+            self.status_label.config(text="授权码无效，请检查后重试", foreground="red")
+            self.auth_code_entry.delete(0, tk.END)
+            self.auth_code_entry.focus()
+            
+    def exit_program(self):
+        """退出程序"""
+        if messagebox.askyesno("确认", "确定要退出程序吗？"):
+            self.dialog.destroy()
+            sys.exit(0)
+            
+    def on_close(self):
+        """窗口关闭事件"""
+        self.exit_program()
+        
+    def wait_for_auth(self):
+        """等待授权完成"""
+        self.dialog.wait_window()
+        return self.authorized
+
 
 class LMArenaManager:
     def __init__(self):
+        # 创建根窗口但先不显示
         self.root = tk.Tk()
-        self.root.title("LMArenaBridge 管理器 v1.0")
+        self.root.withdraw()  # 隐藏主窗口
+        
+        # 初始化授权系统
+        self.auth_system = AuthSystem()
+        
+        # 检查授权
+        if not self.check_authorization():
+            # 确保主窗口已经完全初始化
+            self.root.update_idletasks()
+            
+            # 显示授权对话框
+            auth_dialog = AuthDialog(self.root, self.auth_system)
+            if not auth_dialog.wait_for_auth():
+                # 用户没有成功授权，退出程序
+                sys.exit(0)
+        
+        # 授权成功，显示主窗口
+        self.root.deiconify()  # 显示主窗口
+        self.root.title("LMArenaBridge 管理器 v1.0 (已授权)")
         self.root.geometry("800x600")
         self.root.minsize(600, 400)
         
@@ -42,6 +197,10 @@ class LMArenaManager:
         # 启动状态监控
         self.start_status_monitoring()
         
+    def check_authorization(self):
+        """检查授权状态"""
+        return self.auth_system.is_authorized()
+        
     def create_widgets(self):
         """创建主界面组件"""
         # 创建主框架
@@ -57,6 +216,7 @@ class LMArenaManager:
         self.create_config_tab()
         self.create_model_tab()
         self.create_status_tab()
+        self.create_about_tab()  # 新增关于标签页
         
         # 创建状态栏
         self.create_status_bar(main_frame)
@@ -249,6 +409,47 @@ class LMArenaManager:
         self.config_status_label = ttk.Label(info_frame, text="配置状态: 检查中...")
         self.config_status_label.pack(anchor=tk.W, pady=2)
         
+    def create_about_tab(self):
+        """创建关于标签页，显示授权信息"""
+        about_frame = ttk.Frame(self.notebook)
+        self.notebook.add(about_frame, text="关于")
+        
+        # 软件信息
+        info_frame = ttk.LabelFrame(about_frame, text="软件信息", padding=10)
+        info_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(info_frame, text="LMArenaBridge 管理器", 
+                 font=("Arial", 14, "bold")).pack(pady=5)
+        ttk.Label(info_frame, text="版本: 1.0").pack()
+        ttk.Label(info_frame, text="作者: LMArenaBridge Team").pack()
+        
+        # 授权信息
+        auth_frame = ttk.LabelFrame(about_frame, text="授权信息", padding=10)
+        auth_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        auth_status = self.auth_system.get_auth_status()
+        
+        ttk.Label(auth_frame, text=f"授权状态: {'已授权' if auth_status['authorized'] else '未授权'}", 
+                 foreground="green" if auth_status['authorized'] else "red").pack(anchor=tk.W, pady=2)
+        ttk.Label(auth_frame, text=f"机器码: {auth_status['machine_code']}").pack(anchor=tk.W, pady=2)
+        
+        if auth_status['authorized'] and auth_status.get('auth_date'):
+            auth_date = datetime.fromisoformat(auth_status['auth_date']).strftime('%Y-%m-%d %H:%M:%S')
+            ttk.Label(auth_frame, text=f"授权时间: {auth_date}").pack(anchor=tk.W, pady=2)
+            
+        # 重新授权按钮
+        ttk.Button(auth_frame, text="重新授权", command=self.reauthorize).pack(pady=10)
+        
+    def reauthorize(self):
+        """重新授权"""
+        if messagebox.askyesno("确认", "确定要重新授权吗？\n这将清除当前的授权信息。"):
+            # 删除授权文件
+            if os.path.exists(self.auth_system.auth_file):
+                os.remove(self.auth_system.auth_file)
+            messagebox.showinfo("提示", "授权信息已清除，请重新启动程序进行授权。")
+            self.root.quit()
+            sys.exit(0)
+        
     def create_status_bar(self, parent):
         """创建状态栏"""
         self.status_bar = ttk.Frame(parent)
@@ -265,9 +466,23 @@ class LMArenaManager:
     
     def load_initial_data(self):
         """加载初始数据"""
-        self.load_config()
-        self.load_models()
-        self.check_dependencies()
+        try:
+            self.load_config()
+        except Exception as e:
+            print(f"加载配置时出错: {e}")
+            # 继续运行，使用默认配置
+            
+        try:
+            self.load_models()
+        except Exception as e:
+            print(f"加载模型时出错: {e}")
+            # 继续运行，使用空模型列表
+            
+        try:
+            self.check_dependencies()
+        except Exception as e:
+            print(f"检查依赖时出错: {e}")
+            # 继续运行
         
     def load_config(self):
         """加载配置文件"""
@@ -833,11 +1048,20 @@ class LMArenaManager:
             
     def check_dependencies(self):
         """检查依赖状态"""
-        try:
-            import fastapi, uvicorn, requests, packaging
-            self.dependency_status_label.config(text="依赖状态: ✓ 所有依赖已安装", foreground="green")
-        except ImportError as e:
-            self.dependency_status_label.config(text=f"依赖状态: ✗ 缺少依赖: {e}", foreground="red")
+        # 使用线程来检查依赖，避免阻塞主线程
+        def check_deps():
+            try:
+                import fastapi
+                import uvicorn
+                import packaging
+                self.root.after(0, lambda: self.dependency_status_label.config(
+                    text="依赖状态: ✓ 所有依赖已安装", foreground="green"))
+            except ImportError as e:
+                self.root.after(0, lambda: self.dependency_status_label.config(
+                    text=f"依赖状态: ✗ 缺少依赖: {e.name}", foreground="red"))
+        
+        # 在后台线程中检查依赖
+        threading.Thread(target=check_deps, daemon=True).start()
             
         # 检查配置文件状态
         config_ok = os.path.exists('config.jsonc') and os.path.exists('models.json')
