@@ -1237,7 +1237,8 @@ async def start_id_capture():
 
 
 # --- 主程序入口 ---
-if __name__ == "__main__":
+def main():
+    """API服务器主函数"""
     # 建议从 config.jsonc 中读取端口，此处为临时硬编码
     api_port = 5102
     logger.info(f"🚀 LMArena Bridge v2.0 API 服务器正在启动...")
@@ -1245,3 +1246,6 @@ if __name__ == "__main__":
     logger.info(f"   - WebSocket 端点: ws://127.0.0.1:{api_port}/ws")
     
     uvicorn.run(app, host="127.0.0.1", port=api_port)
+
+if __name__ == "__main__":
+    main()

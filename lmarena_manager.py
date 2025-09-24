@@ -583,16 +583,25 @@ class LMArenaManager:
             # 设置环境变量，强制子进程使用UTF-8编码
             env = os.environ.copy()
             env["PYTHONUTF8"] = "1"
+            env["PYTHONIOENCODING"] = "utf-8"
+            
+            # Windows特殊处理
+            startupinfo = None
+            if sys.platform == "win32":
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = subprocess.SW_HIDE
             
             self.api_server_process = subprocess.Popen(
-                [sys.executable, "api_server.py"],
+                [sys.executable, "api_server"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 encoding='utf-8',
                 errors='replace',
                 bufsize=1,
-                env=env
+                env=env,
+                startupinfo=startupinfo
             )
             
             # 启动日志监控线程
@@ -800,7 +809,15 @@ class LMArenaManager:
         try:
             for line in iter(self.api_server_process.stdout.readline, ''):
                 if line:
-                    self.root.after(0, lambda l=line.strip(): self.log_message(f"[API] {l}"))
+                    # 确保line是字符串类型，处理可能的编码问题
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8', errors='replace')
+                    # 移除特殊字符和控制字符
+                    line = line.strip()
+                    # 过滤掉空行
+                    if line:
+                        # 使用安全的方式传递日志消息
+                        self.root.after(0, self.log_message, f"[API] {line}")
                 if self.api_server_process.poll() is not None:
                     break
         except Exception as e:
@@ -842,7 +859,7 @@ class LMArenaManager:
         threading.Thread(target=self._run_id_updater_process, args=(mode,), daemon=True).start()
 
     def _run_id_updater_process(self, mode):
-        """在单独的线程中运行 id_updater.py 进程"""
+        """在单独的线程中运行 id_updater.py 进程 - 方案二版本"""
         try:
             # 重置标志
             self.id_updater_killed_intentionally = False
@@ -858,7 +875,7 @@ class LMArenaManager:
                 "3. 点击任意模型回答右上角的 'Retry' 按钮来捕获ID。\n\n"
                 "完成后，配置将自动刷新。"))
 
-            # 启动 id_updater.py 进程
+            # 启动 id_updater 进程 - 使用统一入口点
             # 在Windows上，使用 CREATE_NO_WINDOW 标志来隐藏控制台窗口
             creationflags = 0
             if sys.platform == "win32":
@@ -867,9 +884,17 @@ class LMArenaManager:
             # 设置环境变量，强制子进程使用UTF-8编码
             env = os.environ.copy()
             env["PYTHONUTF8"] = "1"
+            env["PYTHONIOENCODING"] = "utf-8"
+            
+            # Windows特殊处理
+            startupinfo = None
+            if sys.platform == "win32":
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = subprocess.SW_HIDE
 
             process = subprocess.Popen(
-                [sys.executable, "id_updater.py"],
+                [sys.executable, "id_updater"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -877,7 +902,8 @@ class LMArenaManager:
                 encoding='utf-8',
                 errors='replace',
                 creationflags=creationflags,
-                env=env
+                env=env,
+                startupinfo=startupinfo
             )
 
             # 根据 id_updater.py 的要求准备输入

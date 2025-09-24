@@ -181,7 +181,8 @@ def notify_api_server():
         print(f"❌ 通知主服务器时发生未知错误: {e}")
         return False
 
-if __name__ == "__main__":
+def main():
+    """ID更新器主函数"""
     config = read_config()
     if not config:
         exit(1)
@@ -227,3 +228,6 @@ if __name__ == "__main__":
         print("服务器已关闭。")
     else:
         print("\n由于无法通知主服务器，ID更新流程中断。")
+
+if __name__ == "__main__":
+    main()
