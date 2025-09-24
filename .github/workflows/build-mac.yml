@@ -2,11 +2,9 @@ name: Build macOS Application
 
 # 触发条件
 on:
-  # 推送到主分支时触发
+  # 推送到主分支或标签时触发
   push:
     branches: [ main, master ]
-  # 创建标签时触发（用于发布版本）
-  push:
     tags:
       - 'v*.*.*'
   # 允许手动触发
