@@ -1,0 +1,32 @@
+# 方案二实施指南
+
+## 修改步骤
+
+1. **使用新的 main.py 作为入口文件**
+   - main.py 已创建，它会根据命令行参数调用不同的模块
+
+2. **修改 lmarena_manager.py**
+   - 找到 `start_api_server` 方法
+   - 将 `[sys.executable, "api_server.py"]` 改为 `[sys.executable, "api_server"]`
+   
+   - 找到 `_run_id_updater_process` 方法
+   - 将 `[sys.executable, "id_updater.py"]` 改为 `[sys.executable, "id_updater"]`
+
+3. **运行打包脚本**
+   ```
+   python win-pack.py
+   ```
+
+4. **测试**
+   - 运行生成的 LMArenaBridge.exe
+   - 测试启动API服务器功能
+   - 测试更新会话ID功能
+
+## 代码修改示例
+
+请参考 lmarena_manager_v2_patch.py 文件中的修改示例。
+
+## 注意事项
+- 确保所有模块都能被正确导入
+- 打包时会将所有依赖都包含进去
+- 如果遇到导入错误，可能需要添加更多的 --hidden-import

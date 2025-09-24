@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-修复版打包脚本 - 解决重复启动 GUI 的问题
+方案二打包脚本 - 使用统一入口点
 """
 
 import os
@@ -24,7 +24,7 @@ def clean_old_files():
     print("✓ 清理完成")
 
 def run_pyinstaller():
-    """使用修复后的PyInstaller命令"""
+    """使用PyInstaller打包统一入口文件"""
     print("\n开始打包...")
     
     cmd = [
@@ -40,6 +40,8 @@ def run_pyinstaller():
         "--collect-all", "fastapi",
         "--collect-all", "uvicorn",
         "--collect-all", "websockets",
+        "--collect-all", "httpx",
+        "--collect-all", "starlette",
         # 隐藏导入
         "--hidden-import", "cryptography.fernet",
         "--hidden-import", "_cffi_backend",
@@ -48,22 +50,19 @@ def run_pyinstaller():
         "--hidden-import", "websockets",
         "--hidden-import", "httpx",
         "--hidden-import", "starlette",
-        # 添加Python脚本作为数据文件
-        "--add-data", "api_server.py;.",
-        "--add-data", "id_updater.py;.",
-        "--add-data", "model_updater.py;.",
-        "--add-data", "auth_system.py;.",
-        "--add-data", "auth_keygen.py;.",
-        # 添加模块目录
-        "--add-data", "modules;modules",
+        "--hidden-import", "lmarena_manager",
+        "--hidden-import", "api_server",
+        "--hidden-import", "id_updater",
+        "--hidden-import", "model_updater",
+        "--hidden-import", "auth_system",
+        "--hidden-import", "auth_keygen",
+        "--hidden-import", "main",  # 添加main模块
+        # 添加所有Python文件作为隐藏导入，确保它们被包含
+        "--hidden-import", "modules.file_uploader",
+        "--hidden-import", "modules.update_script",
         # 主入口文件
-        "lmarena_manager.py"
+        "encoding_fix.py"  # 使用编码修复脚本作为入口
     ]
-    
-    # Windows 特定的分隔符
-    if sys.platform == "win32":
-        # 替换分号为Windows的分隔符
-        cmd = [arg.replace(";", ";") if "--add-data" not in arg else arg for arg in cmd]
     
     try:
         subprocess.check_call(cmd)
@@ -88,7 +87,7 @@ def copy_config_files():
         "models.json",
         "model_endpoint_map.json",
         "available_models.json",
-        "requirements.txt",  # 可能需要用于参考
+        "requirements.txt",
     ]
     
     # 复制单个文件
@@ -102,7 +101,6 @@ def copy_config_files():
     
     # 复制目录
     dirs_to_copy = [
-        "file_bed_server",
         "TampermonkeyScript"
     ]
     
@@ -124,6 +122,7 @@ echo LMArenaBridge 启动中...
 echo.
 echo 注意：如果出现防火墙提示，请选择"允许访问"
 echo.
+echo 正在启动主程序...
 start "" "LMArenaBridge.exe"
 '''
     
@@ -135,7 +134,7 @@ start "" "LMArenaBridge.exe"
 
 def create_readme():
     """创建说明文件"""
-    readme_content = '''# LMArenaBridge 使用说明
+    readme_content = '''# LMArenaBridge 使用说明（方案二版本）
 
 ## 运行要求
 - Windows 10/11 系统
@@ -149,6 +148,10 @@ def create_readme():
 4. 在"服务管理"标签页点击"启动"按钮启动API服务器
 5. 配置文件可以直接编辑 config.jsonc 和 models.json
 
+## 技术说明
+本版本使用统一入口点方式打包，所有功能模块都集成在一个exe文件中。
+通过命令行参数来调用不同的模块功能。
+
 ## 注意事项
 - 如果防火墙提示，请选择"允许访问"
 - 确保端口 5102 和 5103 未被占用
@@ -158,6 +161,11 @@ def create_readme():
 - 如果无法启动，请检查是否有其他程序占用端口
 - 可以使用"Kill"按钮强制终止占用端口的进程
 - 查看日志了解详细错误信息
+
+## 方案二特点
+- 使用统一入口文件 (main.py)
+- 通过参数调用不同模块
+- 解决了打包后重复启动GUI的问题
 '''
     
     dist_dir = Path("dist/LMArenaBridge")
@@ -166,9 +174,56 @@ def create_readme():
             f.write(readme_content)
         print("✓ 已创建使用说明")
 
+def create_implementation_guide():
+    """创建实施指南"""
+    guide_content = '''# 方案二实施指南
+
+## 修改步骤
+
+1. **使用新的 main.py 作为入口文件**
+   - main.py 已创建，它会根据命令行参数调用不同的模块
+
+2. **修改 lmarena_manager.py**
+   - 找到 `start_api_server` 方法
+   - 将 `[sys.executable, "api_server.py"]` 改为 `[sys.executable, "api_server"]`
+   
+   - 找到 `_run_id_updater_process` 方法
+   - 将 `[sys.executable, "id_updater.py"]` 改为 `[sys.executable, "id_updater"]`
+
+3. **运行打包脚本**
+   ```
+   python final_pack_v2.py
+   ```
+
+4. **测试**
+   - 运行生成的 LMArenaBridge.exe
+   - 测试启动API服务器功能
+   - 测试更新会话ID功能
+
+## 代码修改示例
+
+请参考 lmarena_manager_v2_patch.py 文件中的修改示例。
+
+## 注意事项
+- 确保所有模块都能被正确导入
+- 打包时会将所有依赖都包含进去
+- 如果遇到导入错误，可能需要添加更多的 --hidden-import
+'''
+    
+    with open("方案二实施指南.txt", 'w', encoding='utf-8') as f:
+        f.write(guide_content)
+    print("✓ 已创建实施指南")
+
 def main():
     """主函数"""
-    print("=== LMArenaBridge 修复版打包脚本 ===\n")
+    print("=== LMArenaBridge 方案二打包脚本 ===\n")
+    print("使用统一入口点方式解决打包问题\n")
+    
+    # 检查 main.py 是否存在
+    if not os.path.exists("main.py"):
+        print("✗ 错误：找不到 main.py 文件")
+        print("请确保 main.py 文件存在")
+        return
     
     # 1. 清理旧文件
     clean_old_files()
@@ -189,21 +244,22 @@ def main():
     # 5. 创建说明文件
     create_readme()
     
-    # 6. 完成
+    # 6. 创建实施指南
+    create_implementation_guide()
+    
+    # 7. 完成
     print("\n" + "="*50)
-    print("✓ 打包完成！")
+    print("✓ 方案二打包完成！")
     print("="*50)
     print(f"\n输出目录: {os.path.abspath('dist/LMArenaBridge')}")
-    print("\n包含的文件:")
-    print("- LMArenaBridge.exe (主程序)")
-    print("- 启动LMArenaBridge.bat (启动脚本)")
-    print("- 使用说明.txt (使用指南)")
-    print("- 所有配置文件")
-    print("- 所有必要的目录和文件")
     print("\n重要提示:")
-    print("- 此版本已修复重复启动GUI的问题")
-    print("- API服务器将在程序内部线程中运行")
-    print("- 如需进一步优化，请参考'打包问题分析与解决方案.md'")
+    print("1. 请先按照 '方案二实施指南.txt' 修改 lmarena_manager.py")
+    print("2. 修改完成后再运行打包后的程序")
+    print("3. 这个方案通过统一入口点解决了重复启动GUI的问题")
+    print("\n下一步:")
+    print("1. 查看 lmarena_manager_v2_patch.py 了解需要修改的代码")
+    print("2. 修改 lmarena_manager.py 中的相关方法")
+    print("3. 测试打包后的程序")
 
 if __name__ == "__main__":
     main()
