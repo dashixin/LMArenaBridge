@@ -26,18 +26,18 @@ class AuthSystem:
         
     def get_machine_code(self):
         """获取机器码 - 跨平台版本"""
-        # 根据平台选择不同的实现
-        if sys.platform == "darwin":
-            # macOS: 使用专门的Mac实现
-            try:
-                from auth_system_mac import get_mac_machine_code
-                raw_code = get_mac_machine_code()
-                # 格式化为 XXXX-XXXX-XXXX-XXXX
-                formatted_code = '-'.join([raw_code[i:i+4] for i in range(0, 16, 4)])
-                return formatted_code
-            except ImportError:
-                # 如果导入失败，使用默认方法
-                pass
+        # # 根据平台选择不同的实现
+        # if sys.platform == "darwin":
+        #     # macOS: 使用专门的Mac实现
+        #     try:
+        #         from auth_system_mac import get_mac_machine_code
+        #         raw_code = get_mac_machine_code()
+        #         # 格式化为 XXXX-XXXX-XXXX-XXXX
+        #         formatted_code = '-'.join([raw_code[i:i+4] for i in range(0, 16, 4)])
+        #         return formatted_code
+        #     except ImportError:
+        #         # 如果导入失败，使用默认方法
+        #         pass
         
         # Windows 和其他平台：使用原有方法
         import uuid

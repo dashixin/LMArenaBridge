@@ -40,6 +40,6 @@ class AuthKeyGen:
 if __name__ == "__main__":
     # 使用正确的密钥 - 必须与 lmarena_manager.py 中的密钥一致
     keygen = AuthKeyGen(b"LMArena_Bridge_2024_Secret_Key_Do_Not_Share")
-    machine_code = "B330-772D-8EBF-8400"  # 替换为实际机器码
+    machine_code = "4FF7-D37B-C273-A2C5"  # 替换为实际机器码
     auth_code = keygen.generate_auth_code(machine_code)
     print(f"生成的授权码: {auth_code}")
