@@ -1,0 +1,133 @@
+name: Build macOS Application
+
+# 触发条件
+on:
+  # 推送到主分支时触发
+  push:
+    branches: [ main, master ]
+  # 创建标签时触发（用于发布版本）
+  push:
+    tags:
+      - 'v*.*.*'
+  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+        - test
+        - release
+
+jobs:
+  build:
+    name: Build macOS App
+    runs-on: macos-latest
+    
+    steps:
+    # 1. 检出代码
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    # 2. 设置 Python 环境
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    # 3. 显示系统信息
+    - name: Display system info
+      run: |
+        echo "macOS version:"
+        sw_vers
+        echo "Python version:"
+        python --version
+        echo "pip version:"
+        pip --version
+    
+    # 4. 安装依赖
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+        echo "Installed packages:"
+        pip list
+    
+    # 5. 创建必要的目录
+    - name: Create directories
+      run: |
+        mkdir -p dist
+        mkdir -p build
+    
+    # 6. 运行打包脚本
+    - name: Build macOS application
+      run: |
+        echo "Starting build process..."
+        python mac-pack.py
+      continue-on-error: true
+    
+    # 7. 检查构建结果
+    - name: Check build results
+      run: |
+        echo "Checking dist directory:"
+        ls -la dist/
+        if [ -d "dist/LMArenaBridge.app" ]; then
+          echo "✅ App bundle created successfully"
+          echo "App size:"
+          du -sh dist/LMArenaBridge.app
+        else
+          echo "❌ App bundle not found"
+          exit 1
+        fi
+    
+    # 8. 创建 ZIP 文件（用于分发）
+    - name: Create ZIP archive
+      run: |
+        cd dist
+        zip -r LMArenaBridge-macOS.zip LMArenaBridge.app
+        echo "ZIP file created:"
+        ls -lh *.zip
+    
+    # 9. 上传构建产物
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: LMArenaBridge-macOS-${{ github.sha }}
+        path: |
+          dist/LMArenaBridge.app
+          dist/*.zip
+          dist/*.dmg
+          dist/*.command
+          dist/*.txt
+        retention-days: 30
+    
+    # 10. 创建发布（仅在打标签时）
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        files: |
+          dist/LMArenaBridge-macOS.zip
+          dist/*.dmg
+        body: |
+          ## LMArenaBridge macOS 版本
+          
+          ### 安装说明
+          1. 下载 LMArenaBridge-macOS.zip
+          2. 解压文件
+          3. 将 LMArenaBridge.app 拖到应用程序文件夹
+          4. 首次运行时，可能需要在系统偏好设置中允许运行
+          
+          ### 更新内容
+          - 查看提交历史了解详细更新
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

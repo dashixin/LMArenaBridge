@@ -20,6 +20,13 @@ import webbrowser
 import secrets
 import string
 from auth_system import AuthSystem
+from platform_utils import (
+    get_platform, 
+    kill_process_by_port as platform_kill_process,
+    get_startup_info,
+    get_process_creation_flags,
+    ensure_utf8_environment
+)
 
 
 class AuthDialog:
@@ -580,20 +587,12 @@ class LMArenaManager:
                 
             self.log_message("正在启动API服务器...")
             
-            # 设置环境变量，强制子进程使用UTF-8编码
-            env = os.environ.copy()
-            env["PYTHONUTF8"] = "1"
-            env["PYTHONIOENCODING"] = "utf-8"
-            
-            # Windows特殊处理
-            startupinfo = None
-            if sys.platform == "win32":
-                startupinfo = subprocess.STARTUPINFO()
-                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = subprocess.SW_HIDE
+            # 使用平台工具获取环境和启动信息
+            env = ensure_utf8_environment()
+            startupinfo = get_startup_info()
             
             self.api_server_process = subprocess.Popen(
-                [sys.executable, "api_server.py"],
+                [sys.executable, "api_server"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -654,40 +653,14 @@ class LMArenaManager:
     def _kill_process_on_port(self, port):
         """在后台线程中执行终止操作"""
         try:
-            killed_pids = []
-            if sys.platform == "win32":
-                # Windows
-                find_cmd = f"netstat -ano | findstr LISTENING | findstr :{port}"
-                result = subprocess.run(find_cmd, capture_output=True, text=True, shell=True, encoding='utf-8', errors='ignore')
-                output = result.stdout.strip()
-                if output:
-                    for line in output.splitlines():
-                        parts = line.split()
-                        if len(parts) > 4:
-                            pid = parts[-1]
-                            self.log_message(f"找到监听端口 {port} 的进程 PID: {pid}")
-                            kill_cmd = f"taskkill /F /PID {pid}"
-                            kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, shell=True)
-                            if kill_result.returncode == 0:
-                                self.log_message(f"成功终止进程 PID: {pid}", "INFO")
-                                killed_pids.append(pid)
-                            else:
-                                self.log_message(f"终止进程 PID: {pid} 失败: {kill_result.stderr.strip()}", "ERROR")
+            # 使用平台工具终止进程
+            killed_pids = platform_kill_process(port)
+            
+            if killed_pids:
+                for pid in killed_pids:
+                    self.log_message(f"成功终止进程 PID: {pid}", "INFO")
             else:
-                # Linux / macOS
-                find_cmd = f"lsof -t -i:{port} -sTCP:LISTEN"
-                result = subprocess.run(find_cmd, capture_output=True, text=True, shell=True)
-                pids = result.stdout.strip().split()
-                if pids:
-                    for pid in pids:
-                        self.log_message(f"找到监听端口 {port} 的进程 PID: {pid}")
-                        kill_cmd = f"kill -9 {pid}"
-                        kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, shell=True)
-                        if kill_result.returncode == 0:
-                            self.log_message(f"成功终止进程 PID: {pid}", "INFO")
-                            killed_pids.append(pid)
-                        else:
-                            self.log_message(f"终止进程 PID: {pid} 失败: {kill_result.stderr.strip()}", "ERROR")
+                self.log_message(f"未找到监听端口 {port} 的活动进程。")
             
             if killed_pids:
                 self.root.after(0, lambda: messagebox.showinfo("成功", f"已强制终止占用端口 {port} 的进程: {', '.join(killed_pids)}"))
@@ -715,40 +688,14 @@ class LMArenaManager:
     def _kill_session_updater_process(self, port):
         """在后台线程中执行终止会话更新进程的操作"""
         try:
-            killed_pids = []
-            if sys.platform == "win32":
-                # Windows
-                find_cmd = f"netstat -ano | findstr LISTENING | findstr :{port}"
-                result = subprocess.run(find_cmd, capture_output=True, text=True, shell=True, encoding='utf-8', errors='ignore')
-                output = result.stdout.strip()
-                if output:
-                    for line in output.splitlines():
-                        parts = line.split()
-                        if len(parts) > 4:
-                            pid = parts[-1]
-                            self.log_message(f"找到监听端口 {port} 的进程 PID: {pid}")
-                            kill_cmd = f"taskkill /F /PID {pid}"
-                            kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, shell=True)
-                            if kill_result.returncode == 0:
-                                self.log_message(f"成功终止进程 PID: {pid}", "INFO")
-                                killed_pids.append(pid)
-                            else:
-                                self.log_message(f"终止进程 PID: {pid} 失败: {kill_result.stderr.strip()}", "ERROR")
+            # 使用平台工具终止进程
+            killed_pids = platform_kill_process(port)
+            
+            if killed_pids:
+                for pid in killed_pids:
+                    self.log_message(f"成功终止进程 PID: {pid}", "INFO")
             else:
-                # Linux / macOS
-                find_cmd = f"lsof -t -i:{port} -sTCP:LISTEN"
-                result = subprocess.run(find_cmd, capture_output=True, text=True, shell=True)
-                pids = result.stdout.strip().split()
-                if pids:
-                    for pid in pids:
-                        self.log_message(f"找到监听端口 {port} 的进程 PID: {pid}")
-                        kill_cmd = f"kill -9 {pid}"
-                        kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, shell=True)
-                        if kill_result.returncode == 0:
-                            self.log_message(f"成功终止进程 PID: {pid}", "INFO")
-                            killed_pids.append(pid)
-                        else:
-                            self.log_message(f"终止进程 PID: {pid} 失败: {kill_result.stderr.strip()}", "ERROR")
+                self.log_message(f"未找到监听端口 {port} 的活动进程。")
             
             if killed_pids:
                 self.root.after(0, lambda: messagebox.showinfo("成功", f"已强制终止占用端口 {port} 的进程: {', '.join(killed_pids)}"))
@@ -875,26 +822,13 @@ class LMArenaManager:
                 "3. 点击任意模型回答右上角的 'Retry' 按钮来捕获ID。\n\n"
                 "完成后，配置将自动刷新。"))
 
-            # 启动 id_updater 进程 - 使用统一入口点
-            # 在Windows上，使用 CREATE_NO_WINDOW 标志来隐藏控制台窗口
-            creationflags = 0
-            if sys.platform == "win32":
-                creationflags = subprocess.CREATE_NO_WINDOW
-
-            # 设置环境变量，强制子进程使用UTF-8编码
-            env = os.environ.copy()
-            env["PYTHONUTF8"] = "1"
-            env["PYTHONIOENCODING"] = "utf-8"
-            
-            # Windows特殊处理
-            startupinfo = None
-            if sys.platform == "win32":
-                startupinfo = subprocess.STARTUPINFO()
-                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = subprocess.SW_HIDE
+            # 使用平台工具获取进程创建参数
+            creationflags = get_process_creation_flags()
+            env = ensure_utf8_environment()
+            startupinfo = get_startup_info()
 
             process = subprocess.Popen(
-                [sys.executable, "id_updater.py"],
+                [sys.executable, "id_updater"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
