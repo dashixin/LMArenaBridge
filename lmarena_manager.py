@@ -427,7 +427,7 @@ class LMArenaManager:
         ttk.Label(info_frame, text="LMArenaBridge 管理器", 
                  font=("Arial", 14, "bold")).pack(pady=5)
         ttk.Label(info_frame, text="版本: 1.0").pack()
-        ttk.Label(info_frame, text="作者: LMArenaBridge Team").pack()
+        ttk.Label(info_frame, text="作者vx: tostring1").pack()
         
         # 授权信息
         auth_frame = ttk.LabelFrame(about_frame, text="授权信息", padding=10)
@@ -593,7 +593,7 @@ class LMArenaManager:
                 startupinfo.wShowWindow = subprocess.SW_HIDE
             
             self.api_server_process = subprocess.Popen(
-                [sys.executable, "api_server"],
+                [sys.executable, "api_server.py"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -894,7 +894,7 @@ class LMArenaManager:
                 startupinfo.wShowWindow = subprocess.SW_HIDE
 
             process = subprocess.Popen(
-                [sys.executable, "id_updater"],
+                [sys.executable, "id_updater.py"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
