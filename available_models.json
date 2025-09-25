@@ -223,6 +223,36 @@
         "provider": "fireworks"
     },
     {
+        "id": "f44fd4f8-af30-480f-8ce2-80b2bdfea55e",
+        "publicName": "imagen-4.0-fast-generate-001",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "image": {
+                    "aspectRatios": [
+                        "1:1"
+                    ]
+                }
+            }
+        },
+        "organization": "google",
+        "provider": "googleVertex"
+    },
+    {
+        "id": "000db706-15e3-4932-b9ae-961f93970cf1",
+        "publicName": "phantom-0908-1",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        }
+    },
+    {
         "id": "49bd7403-c7fd-4d91-9829-90a91906ad6c",
         "publicName": "llama-4-maverick-03-26-experimental",
         "capabilities": {
@@ -832,20 +862,6 @@
         "provider": "xaiPublic"
     },
     {
-        "id": "9217ac2d-91bc-4391-aa07-b8f9e2cf11f2",
-        "publicName": "grok-4-fast-search",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true
-            },
-            "outputCapabilities": {
-                "search": true
-            }
-        },
-        "organization": "xai",
-        "provider": "xaiResearchSearch"
-    },
-    {
         "id": "b222be23-bd55-4b20-930b-a30cc84d3afd",
         "publicName": "gemini-2.5-pro-grounding",
         "capabilities": {
@@ -1381,6 +1397,18 @@
         "provider": "zai"
     },
     {
+        "id": "d9f2a78a-0171-4d71-9bf8-4e79a0d1645b",
+        "publicName": "phantom-0908-2",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        }
+    },
+    {
         "id": "27035fb8-a25b-4ec9-8410-34be18328afd",
         "publicName": "mistral-medium-2508",
         "capabilities": {
@@ -1464,6 +1492,20 @@
                 "text": true
             }
         }
+    },
+    {
+        "id": "98ad8b8b-12cd-46cd-98de-99edde7e03eb",
+        "publicName": "qwen3-max-2025-09-23",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        },
+        "organization": "alibaba",
+        "provider": "alibaba"
     },
     {
         "id": "73378be5-cdba-49e7-b3d0-027949871aa6",
@@ -1731,6 +1773,21 @@
         "provider": "alibaba"
     },
     {
+        "id": "03c511f5-0d35-4751-aae6-24f918b0d49e",
+        "publicName": "qwen3-vl-235b-a22b-thinking",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true,
+                "image": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        },
+        "organization": "alibaba",
+        "provider": "alibaba"
+    },
+    {
         "id": "6c98ce8c-41d1-42cd-b2e3-292c6519add5",
         "publicName": "redwood",
         "capabilities": {
@@ -1818,6 +1875,21 @@
                 "text": true
             }
         }
+    },
+    {
+        "id": "716aa8ca-d729-427f-93ab-9579e4a13e98",
+        "publicName": "qwen3-vl-235b-a22b-instruct",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true,
+                "image": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        },
+        "organization": "alibaba",
+        "provider": "alibaba"
     },
     {
         "id": "f2f8176d-7a8c-4f4b-a9db-d78df3e81d10",
@@ -1949,19 +2021,6 @@
         }
     },
     {
-        "id": "5e8e32e9-3a83-40ea-83a3-53ae65729998",
-        "publicName": "oceanreef",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true,
-                "image": true
-            },
-            "outputCapabilities": {
-                "text": true
-            }
-        }
-    },
-    {
         "id": "71023e9b-7361-498a-b6db-f2d2a83883fd",
         "publicName": "grok-4-fast",
         "capabilities": {
@@ -1974,18 +2033,6 @@
         },
         "organization": "xai",
         "provider": "xaiResearch"
-    },
-    {
-        "id": "463197ea-34f1-418e-b685-917015a004ab",
-        "publicName": "phantom-0903-4",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true
-            },
-            "outputCapabilities": {
-                "text": true
-            }
-        }
     },
     {
         "id": "f6c8aadb-1835-4dfe-9217-bc95cdfc8fa8",
@@ -2060,6 +2107,38 @@
         "provider": "meituan"
     },
     {
+        "id": "923e9400-9c1e-4c49-8ed2-6d3e418661b6",
+        "publicName": "\"humuhumu\" nukunukuapua'a",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true,
+                "image": {
+                    "multipleImages": true,
+                    "requiresUpload": true
+                }
+            },
+            "outputCapabilities": {
+                "image": {
+                    "aspectRatios": [
+                        "1:1"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "id": "9217ac2d-91bc-4391-aa07-b8f9e2cf11f2",
+        "publicName": "grok-4-fast-search",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "search": true
+            }
+        }
+    },
+    {
         "id": "3a91bb37-39fb-471c-8aa2-a89b98d280d0",
         "publicName": "wan-v2.2-a14b",
         "capabilities": {
@@ -2097,19 +2176,6 @@
         }
     },
     {
-        "id": "7ece181a-912c-455f-9b83-11b0e1cdfae9",
-        "publicName": "oceanstone",
-        "capabilities": {
-            "inputCapabilities": {
-                "text": true,
-                "image": true
-            },
-            "outputCapabilities": {
-                "text": true
-            }
-        }
-    },
-    {
         "id": "f23d6df4-4395-4404-897f-bdedc909e783",
         "publicName": "raptor",
         "capabilities": {
@@ -2121,5 +2187,19 @@
                 "text": true
             }
         }
+    },
+    {
+        "id": "19b3730a-0369-49ba-ad9c-09e7337937f0",
+        "publicName": "grok-4-fast-reasoning",
+        "capabilities": {
+            "inputCapabilities": {
+                "text": true
+            },
+            "outputCapabilities": {
+                "text": true
+            }
+        },
+        "organization": "xai",
+        "provider": "xaiPublic"
     }
 ]
