@@ -1002,6 +1002,7 @@ async def update_available_models_endpoint(request: Request):
 
 
 @app.post("/v1/chat/completions")
+@app.post("/v1/messages")
 async def chat_completions(request: Request):
     """
     处理聊天补全请求。
