@@ -2,12 +2,7 @@ name: Build macOS Application
 
 # 触发条件
 on:
-  # 推送到主分支或标签时触发
-  push:
-    branches: [ main, master ]
-    tags:
-      - 'v*.*.*'
-  # 允许手动触发
+  # 仅允许手动触发
   workflow_dispatch:
     inputs:
       build_type:
@@ -81,6 +76,26 @@ jobs:
           echo "✅ App bundle created successfully"
           echo "App size:"
           du -sh dist/LMArenaBridge.app
+          echo ""
+          echo "Checking app bundle contents:"
+          echo "Contents of LMArenaBridge.app:"
+          ls -la dist/LMArenaBridge.app/
+          echo ""
+          echo "Contents of Resources directory:"
+          if [ -d "dist/LMArenaBridge.app/Contents/Resources" ]; then
+            ls -la dist/LMArenaBridge.app/Contents/Resources/
+          fi
+          echo ""
+          echo "Checking for TampermonkeyScript:"
+          if [ -d "dist/LMArenaBridge.app/Contents/Resources/TampermonkeyScript" ]; then
+            echo "✅ TampermonkeyScript directory found"
+            ls -la dist/LMArenaBridge.app/Contents/Resources/TampermonkeyScript/
+          elif [ -d "dist/LMArenaBridge.app/Contents/MacOS/TampermonkeyScript" ]; then
+            echo "✅ TampermonkeyScript directory found in MacOS"
+            ls -la dist/LMArenaBridge.app/Contents/MacOS/TampermonkeyScript/
+          else
+            echo "❌ TampermonkeyScript directory not found in app bundle"
+          fi
         elif [ -d "dist/LMArenaBridge" ]; then
           echo "⚠️ Found LMArenaBridge directory instead of .app bundle"
           echo "Directory contents:"
@@ -106,9 +121,16 @@ jobs:
     - name: Create ZIP archive
       run: |
         cd dist
-        zip -r LMArenaBridge-macOS.zip LMArenaBridge.app
+        echo "Files in dist directory before zipping:"
+        ls -la
+        echo ""
+        # 创建包含所有必要文件的 ZIP
+        zip -r LMArenaBridge-macOS.zip LMArenaBridge.app *.command *.txt
         echo "ZIP file created:"
         ls -lh *.zip
+        echo ""
+        echo "Contents of ZIP file:"
+        unzip -l LMArenaBridge-macOS.zip
     
     # 9. 上传构建产物
     - name: Upload artifacts
@@ -122,28 +144,3 @@ jobs:
           dist/*.command
           dist/*.txt
         retention-days: 30
-    
-    # 10. 创建发布（仅在打标签时）
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        name: Release ${{ github.ref_name }}
-        draft: false
-        prerelease: false
-        files: |
-          dist/LMArenaBridge-macOS.zip
-          dist/*.dmg
-        body: |
-          ## LMArenaBridge macOS 版本
-          
-          ### 安装说明
-          1. 下载 LMArenaBridge-macOS.zip
-          2. 解压文件
-          3. 将 LMArenaBridge.app 拖到应用程序文件夹
-          4. 首次运行时，可能需要在系统偏好设置中允许运行
-          
-          ### 更新内容
-          - 查看提交历史了解详细更新
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

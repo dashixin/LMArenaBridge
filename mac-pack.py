@@ -172,6 +172,16 @@ def run_pyinstaller():
     """使用PyInstaller打包"""
     print("\n开始打包...")
     
+    # 检查 TampermonkeyScript 目录是否存在
+    if not os.path.exists('TampermonkeyScript'):
+        print("❌ TampermonkeyScript 目录不存在")
+        return False
+    else:
+        print("✓ TampermonkeyScript 目录存在")
+        print("  目录内容:")
+        for item in os.listdir('TampermonkeyScript'):
+            print(f"    - {item}")
+    
     try:
         # 直接使用命令行参数打包，不使用spec文件
         cmd = [
@@ -208,17 +218,29 @@ def run_pyinstaller():
             'main.py'
         ]
         
-        subprocess.check_call(cmd)
-        print("✓ 打包成功")
+        print("执行命令:")
+        print(" ".join(cmd))
         
-        # 修改Info.plist
-        plist_path = "dist/LMArenaBridge.app/Contents/Info.plist"
-        if os.path.exists(plist_path):
-            print("正在更新 Info.plist...")
-            # 使用 plutil 命令更新 plist
-            subprocess.run(['plutil', '-replace', 'LSMinimumSystemVersion', '-string', '12.0', plist_path])
-            subprocess.run(['plutil', '-replace', 'NSHighResolutionCapable', '-bool', 'true', plist_path])
-            print("✓ Info.plist 更新完成")
+        subprocess.check_call(cmd)
+        print("✓ PyInstaller 执行成功")
+        
+        # 检查生成的文件
+        if os.path.exists("dist/LMArenaBridge.app"):
+            print("✓ .app 文件已生成")
+            
+            # 修改Info.plist
+            plist_path = "dist/LMArenaBridge.app/Contents/Info.plist"
+            if os.path.exists(plist_path):
+                print("正在更新 Info.plist...")
+                # 使用 plutil 命令更新 plist
+                subprocess.run(['plutil', '-replace', 'LSMinimumSystemVersion', '-string', '12.0', plist_path])
+                subprocess.run(['plutil', '-replace', 'NSHighResolutionCapable', '-bool', 'true', plist_path])
+                print("✓ Info.plist 更新完成")
+            else:
+                print("⚠️ Info.plist 文件未找到")
+        else:
+            print("❌ .app 文件未生成")
+            return False
         
         return True
     except subprocess.CalledProcessError as e:
