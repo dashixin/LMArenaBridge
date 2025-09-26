@@ -592,7 +592,7 @@ class LMArenaManager:
             startupinfo = get_startup_info()
             
             self.api_server_process = subprocess.Popen(
-                [sys.executable, "api_server.py"],
+                [sys.executable, "api_server"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -828,7 +828,7 @@ class LMArenaManager:
             startupinfo = get_startup_info()
 
             process = subprocess.Popen(
-                [sys.executable, "id_updater.py"],
+                [sys.executable, "id_updater"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
