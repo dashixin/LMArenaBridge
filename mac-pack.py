@@ -63,45 +63,90 @@ def clean_old_files():
 def create_spec_file():
     """创建PyInstaller spec文件"""
     spec_content = '''# -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules
 
 block_cipher = None
+
+# 收集所有必要的包
+datas = []
+binaries = []
+hiddenimports = []
+
+# 添加数据文件
+datas += [
+    ('config.jsonc', '.'),
+    ('models.json', '.'),
+    ('model_endpoint_map.json', '.'),
+    ('available_models.json', '.'),
+    ('TampermonkeyScript', 'TampermonkeyScript'),
+    ('modules', 'modules'),
+    ('file_bed_server', 'file_bed_server'),
+]
+
+# 收集所有依赖包
+packages = ['cryptography', 'cffi', 'fastapi', 'uvicorn', 'websockets', 'httpx', 
+            'starlette', 'aiohttp', 'packaging', 'requests']
+for package in packages:
+    try:
+        tmp_ret = collect_all(package)
+        datas += tmp_ret[0]
+        binaries += tmp_ret[1]
+        hiddenimports += tmp_ret[2]
+    except:
+        pass
+
+# 添加项目模块
+hiddenimports += [
+    'cryptography',
+    'cryptography.fernet',
+    '_cffi_backend',
+    'fastapi',
+    'uvicorn',
+    'uvicorn.logging',
+    'uvicorn.loops',
+    'uvicorn.loops.auto',
+    'uvicorn.protocols',
+    'uvicorn.protocols.http',
+    'uvicorn.protocols.http.auto',
+    'uvicorn.protocols.websockets',
+    'uvicorn.protocols.websockets.auto',
+    'uvicorn.lifespan',
+    'uvicorn.lifespan.on',
+    'websockets',
+    'websockets.legacy',
+    'websockets.legacy.server',
+    'httpx',
+    'starlette',
+    'starlette.applications',
+    'starlette.routing',
+    'starlette.middleware',
+    'starlette.middleware.cors',
+    'aiohttp',
+    'packaging',
+    'requests',
+    'lmarena_manager',
+    'api_server',
+    'id_updater',
+    'model_updater',
+    'auth_system',
+    'auth_system_mac',
+    'auth_keygen',
+    'platform_utils',
+    'modules.file_uploader',
+    'modules.update_script',
+    'tkinter',
+    'tkinter.ttk',
+    'tkinter.messagebox',
+    'tkinter.scrolledtext',
+    'tkinter.filedialog',
+]
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
-    datas=[
-        ('config.jsonc', '.'),
-        ('models.json', '.'),
-        ('model_endpoint_map.json', '.'),
-        ('available_models.json', '.'),
-        ('TampermonkeyScript', 'TampermonkeyScript'),
-    ],
-    hiddenimports=[
-        'cryptography',
-        'cryptography.fernet',
-        '_cffi_backend',
-        'fastapi',
-        'uvicorn',
-        'websockets',
-        'httpx',
-        'starlette',
-        'lmarena_manager',
-        'api_server',
-        'id_updater',
-        'model_updater',
-        'auth_system',
-        'auth_system_mac',
-        'auth_keygen',
-        'platform_utils',
-        'modules.file_uploader',
-        'modules.update_script',
-        'tkinter',
-        'tkinter.ttk',
-        'tkinter.messagebox',
-        'tkinter.scrolledtext',
-        'tkinter.filedialog',
-    ],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -181,6 +226,19 @@ def run_pyinstaller():
         print("  目录内容:")
         for item in os.listdir('TampermonkeyScript'):
             print(f"    - {item}")
+    
+    # 确保spec文件存在且正确
+    if not os.path.exists('LMArenaBridge.spec'):
+        print("❌ spec文件不存在，正在创建...")
+        create_spec_file()
+    else:
+        # 检查spec文件是否正确
+        with open('LMArenaBridge.spec', 'r') as f:
+            spec_content = f.read()
+            if 'encoding_fix.py' in spec_content or 'main.py' not in spec_content:
+                print("⚠️ 检测到错误的spec文件，重新创建...")
+                os.remove('LMArenaBridge.spec')
+                create_spec_file()
     
     try:
         # 使用spec文件打包
