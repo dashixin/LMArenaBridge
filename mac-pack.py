@@ -127,7 +127,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=True,
-    target_arch=None,
+    target_arch='universal2',
     codesign_identity=None,
     entitlements_file=None,
 )
@@ -156,7 +156,7 @@ app = BUNDLE(
         'CFBundleVersion': "1.0.0",
         'CFBundleShortVersionString': "1.0.0",
         'NSHighResolutionCapable': True,
-        'LSMinimumSystemVersion': '10.13.0',
+        'LSMinimumSystemVersion': '12.0',
         'NSRequiresAquaSystemAppearance': False,
         'LSApplicationCategoryType': 'public.app-category.developer-tools',
     },
@@ -257,8 +257,12 @@ def create_readme():
     readme_content = '''# LMArenaBridge macOS版使用说明
 
 ## 系统要求
-- macOS 10.13 或更高版本
-- Python 3.8+ （应用已内置）
+- 支持的 macOS 版本：
+  - macOS Monterey (12.0) 或更高版本
+  - macOS Ventura (13.0)
+  - macOS Sonoma (14.0)
+  - macOS Sequoia (15.0)
+- 支持 Intel 和 Apple Silicon (M1/M2/M3) 处理器
 - 需要安装油猴脚本（TampermonkeyScript目录中）
 
 ## 安装方法
