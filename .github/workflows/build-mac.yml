@@ -75,12 +75,30 @@ jobs:
       run: |
         echo "Checking dist directory:"
         ls -la dist/
+        echo ""
+        echo "Checking for app bundle or directory:"
         if [ -d "dist/LMArenaBridge.app" ]; then
           echo "✅ App bundle created successfully"
           echo "App size:"
           du -sh dist/LMArenaBridge.app
+        elif [ -d "dist/LMArenaBridge" ]; then
+          echo "⚠️ Found LMArenaBridge directory instead of .app bundle"
+          echo "Directory contents:"
+          ls -la dist/LMArenaBridge/
+          echo ""
+          echo "Attempting to manually create .app bundle..."
+          # 手动创建 .app 结构
+          mv dist/LMArenaBridge dist/LMArenaBridge.app
+          if [ -d "dist/LMArenaBridge.app" ]; then
+            echo "✅ Successfully converted to .app bundle"
+            echo "App size:"
+            du -sh dist/LMArenaBridge.app
+          else
+            echo "❌ Failed to create .app bundle"
+            exit 1
+          fi
         else
-          echo "❌ App bundle not found"
+          echo "❌ Neither app bundle nor directory found"
           exit 1
         fi
     

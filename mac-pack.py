@@ -173,9 +173,53 @@ def run_pyinstaller():
     print("\n开始打包...")
     
     try:
-        # 使用spec文件打包
-        subprocess.check_call(['pyinstaller', '--clean', '--noconfirm', 'LMArenaBridge.spec'])
+        # 直接使用命令行参数打包，不使用spec文件
+        cmd = [
+            'pyinstaller',
+            '--clean',
+            '--noconfirm',
+            '--windowed',  # macOS上创建.app包
+            '--name', 'LMArenaBridge',
+            '--osx-bundle-identifier', 'com.lmarena.bridge',
+            '--target-arch', 'universal2',  # 支持Intel和Apple Silicon
+            '--add-data', 'config.jsonc:.',
+            '--add-data', 'models.json:.',
+            '--add-data', 'model_endpoint_map.json:.',
+            '--add-data', 'available_models.json:.',
+            '--add-data', 'TampermonkeyScript:TampermonkeyScript',
+            '--hidden-import', 'cryptography',
+            '--hidden-import', 'cryptography.fernet',
+            '--hidden-import', '_cffi_backend',
+            '--hidden-import', 'fastapi',
+            '--hidden-import', 'uvicorn',
+            '--hidden-import', 'websockets',
+            '--hidden-import', 'httpx',
+            '--hidden-import', 'starlette',
+            '--hidden-import', 'lmarena_manager',
+            '--hidden-import', 'api_server',
+            '--hidden-import', 'id_updater',
+            '--hidden-import', 'model_updater',
+            '--hidden-import', 'auth_system',
+            '--hidden-import', 'auth_system_mac',
+            '--hidden-import', 'auth_keygen',
+            '--hidden-import', 'platform_utils',
+            '--hidden-import', 'modules.file_uploader',
+            '--hidden-import', 'modules.update_script',
+            'main.py'
+        ]
+        
+        subprocess.check_call(cmd)
         print("✓ 打包成功")
+        
+        # 修改Info.plist
+        plist_path = "dist/LMArenaBridge.app/Contents/Info.plist"
+        if os.path.exists(plist_path):
+            print("正在更新 Info.plist...")
+            # 使用 plutil 命令更新 plist
+            subprocess.run(['plutil', '-replace', 'LSMinimumSystemVersion', '-string', '12.0', plist_path])
+            subprocess.run(['plutil', '-replace', 'NSHighResolutionCapable', '-bool', 'true', plist_path])
+            print("✓ Info.plist 更新完成")
+        
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ 打包失败: {e}")
@@ -357,23 +401,20 @@ def main():
     # 2. 清理旧文件
     clean_old_files()
     
-    # 3. 创建spec文件
-    create_spec_file()
-    
-    # 4. 运行PyInstaller
+    # 3. 运行PyInstaller
     if not run_pyinstaller():
         print("\n打包失败，请检查错误信息")
         if is_ci_environment():
             sys.exit(1)
         return
     
-    # 5. 创建启动脚本
+    # 4. 创建启动脚本
     create_launch_script()
     
-    # 6. 创建说明文件
+    # 5. 创建说明文件
     create_readme()
     
-    # 7. 尝试创建DMG（可选）
+    # 6. 尝试创建DMG（可选）
     create_dmg()
     
     # 8. 完成
