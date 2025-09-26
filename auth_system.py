@@ -14,6 +14,7 @@ import platform
 import subprocess
 import re
 import sys
+import uuid
 from datetime import datetime
 from cryptography.fernet import Fernet
 
@@ -23,43 +24,72 @@ class AuthSystem:
         self.auth_file = ".auth"
         self.fernet_key = b'aK3xY9zB5mN8qW2eR6tY1uI4oP7sD0fG3hJ6kL9cV2b='  # 用于加密存储
         self.cipher = Fernet(self.fernet_key)
-        
-    def get_machine_code(self):
-        """获取机器码 - 跨平台版本"""
-        # # 根据平台选择不同的实现
-        # if sys.platform == "darwin":
-        #     # macOS: 使用专门的Mac实现
-        #     try:
-        #         from auth_system_mac import get_mac_machine_code
-        #         raw_code = get_mac_machine_code()
-        #         # 格式化为 XXXX-XXXX-XXXX-XXXX
-        #         formatted_code = '-'.join([raw_code[i:i+4] for i in range(0, 16, 4)])
-        #         return formatted_code
-        #     except ImportError:
-        #         # 如果导入失败，使用默认方法
-        #         pass
-        
-        # Windows 和其他平台：使用原有方法
-        import uuid
-        
-        # 获取MAC地址
-        mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) 
-                      for ele in range(0,8*6,8)][::-1])
-        
-        # 添加主机名增加唯一性
-        hostname = platform.node()
-        
-        # 组合信息
-        hardware_info = [mac, hostname]
             
-        # 生成机器码
+    def get_unique_hardware_id(self):
+        """根据操作系统获取主板序列号或 Mac 序列号，作为更稳定的硬件标识符。"""
+        
+        current_os = sys.platform
+        
+        # --- Windows: 获取主板序列号 ---
+        if current_os == "win32":
+            try:
+                # 使用 wmic 获取主板序列号
+                # creationflags=0x08000000 用于隐藏命令窗口
+                cmd = 'wmic baseboard get serialnumber'
+                # 使用 shell=True 以确保 wmic 命令能被正确识别
+                serial_info = subprocess.check_output(cmd, creationflags=0x08000000, shell=True).decode().strip()
+                
+                # 提取序列号（通常是输出的最后一行）
+                serial_number = serial_info.split('\n')[-1].strip()
+                if serial_number and serial_number.upper() != "UNKNOWN":
+                    return "SN_WIN:" + serial_number
+            except Exception:
+                pass # 如果失败，将进入回退方案
+                
+        # --- macOS (darwin): 获取 Mac 序列号 ---
+        elif current_os == "darwin":
+            try:
+                # 使用 ioreg 获取 IOPlatformSerialNumber
+                cmd = "ioreg -l | grep IOPlatformSerialNumber"
+                serial_info = subprocess.check_output(cmd, shell=True).decode().strip()
+                
+                # 序列号通常位于 "" 之间
+                match = re.search(r'"IOPlatformSerialNumber"\s*=\s*"([^"]+)"', serial_info)
+                if match:
+                    return "SN_MAC:" + match.group(1).strip()
+            except Exception:
+                pass # 如果失败，将进入回退方案
+
+        # --- 回退方案 (Linux, 其他或序列号获取失败) ---
+        # 沿用原来的 MAC 地址和主机名组合
+        try:
+            # 获取 MAC 地址
+            mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) 
+                            for ele in range(0,8*6,8)][::-1])
+            return "MAC_HOST:" + mac
+        except Exception:
+            # 如果连 MAC 地址都获取失败，返回一个默认值
+            return "DEFAULT_FAIL"
+        
+
+    def get_machine_code(self):
+        """获取机器码 - 跨平台稳定版本"""
+        
+        # 1. 获取稳定硬件标识符
+        hardware_id = self.get_unique_hardware_id()
+            
+        # 2. 添加主机名（继续保留，增加唯一性）
+        hostname = platform.node()
+        hardware_info = [hardware_id, hostname]
+            
+        # 3. 组合信息并进行哈希
         hardware_string = '|'.join(hardware_info)
         machine_code_hash = hashlib.sha256(hardware_string.encode()).hexdigest()
-        
-        # 返回前16位，格式化为 XXXX-XXXX-XXXX-XXXX
+            
+        # 4. 返回前16位，格式化为 XXXX-XXXX-XXXX-XXXX
         machine_code = machine_code_hash[:16].upper()
         formatted_code = '-'.join([machine_code[i:i+4] for i in range(0, 16, 4)])
-        
+            
         return formatted_code
         
     def verify_auth_code(self, machine_code, auth_code):

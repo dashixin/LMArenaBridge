@@ -5,10 +5,10 @@
   // --- 会话设置 ---
   // 当前 LMArena 页面的会话 ID。
   // 通过运行 id_updater.py 可以自动更新。
-  "session_id": "c43cc703-d1bf-43b8-aa82-1c37b601fbb8",
+  "session_id": "fa3e96d4-c2ad-4beb-8328-9e742c12ffbb",
   // 当前会话的最后一条消息 ID。
   // 通过运行 id_updater.py 可以自动更新。
-  "message_id": "b6dc684d-7681-4c84-ac60-7e588c093c7f",
+  "message_id": "e83e3906-3184-45ca-92fe-21d8ec324724",
   // --- ID 更新器专用配置 ---
   // id_updater.py 上次使用的模式 ('direct_chat' 或 'battle')
   "id_updater_last_mode": "direct_chat",
