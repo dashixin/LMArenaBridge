@@ -62,6 +62,26 @@ jobs:
     - name: Build macOS application
       run: |
         echo "Starting build process..."
+        echo "Current directory contents:"
+        ls -la
+        echo ""
+        echo "Checking for required files:"
+        for file in config.jsonc models.json model_endpoint_map.json available_models.json; do
+          if [ -f "$file" ]; then
+            echo "✓ $file exists"
+          else
+            echo "❌ $file missing"
+          fi
+        done
+        echo ""
+        echo "Checking TampermonkeyScript directory:"
+        if [ -d "TampermonkeyScript" ]; then
+          echo "✓ TampermonkeyScript directory exists"
+          ls -la TampermonkeyScript/
+        else
+          echo "❌ TampermonkeyScript directory missing"
+        fi
+        echo ""
         python mac-pack.py
       continue-on-error: true
     
